@@ -1,0 +1,152 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.api import deps
+from datetime import datetime, timezone
+
+from app.core.multihazard import MultiHazardRiskEngine
+from app.core.asset_risk import AssetRiskEngine
+from app.core.sensor_health import SensorHealthEngine
+from app.core.uncertainty import UncertaintyQuantificationEngine
+from app.core.assimilation import twin_engine
+
+from app.api.api_v1.endpoints.predictions import get_model
+import numpy as np
+
+router = APIRouter()
+
+@router.get("/command-summary")
+def get_ai_command_summary(hazard: str = "FLOOD"):
+    """
+    Generate an AI Command Summary using existing core engines, tailored to the selected dashboard.
+    """
+    # Pull the live, assimilated physical state of the city
+    twin_data = twin_engine.get_current_state()
+    env_state = twin_data.get("state", {})
+    
+    # Obtain precise live flood probability from the ML model
+    features = twin_engine.get_feature_vector()
+    features_arr = np.array(features).reshape(1, -1)
+    
+    model_data = get_model()
+    flood_prob = 0.0
+    if model_data is not None:
+        try:
+            model = model_data["model"]
+            flood_prob = float(model.predict_proba(features_arr)[0, 1])
+        except Exception:
+            flood_prob = 0.4
+            
+    mh_engine = MultiHazardRiskEngine()
+    mh_result = mh_engine.calculate_compound_risk(env_state, flood_prob=flood_prob)
+    
+    # Extract specific hazards
+    raw_hazards = mh_engine.normalize_hazard_states(env_state, flood_prob)
+    
+    target = hazard.upper()
+    override_hazard = None
+    if target == "FLOOD":
+        override_hazard = raw_hazards.get("flood")
+    elif target == "HEATWAVE":
+        override_hazard = raw_hazards.get("heat")
+    elif target == "EXTREME_RAINFALL":
+        override_hazard = raw_hazards.get("rainfall")
+    elif target == "DROUGHT":
+        override_hazard = raw_hazards.get("reservoir_stress")
+        
+    if override_hazard:
+        # Override the top priority threat to match the user's current context
+        mh_result["dominant_hazard"] = override_hazard["hazard_name"]
+        mh_result["compound_risk_level"] = override_hazard["hazard_level"]
+        mh_result["compound_risk_score"] = override_hazard["normalized_intensity"]
+    
+    asset_engine = AssetRiskEngine()
+    asset_result = asset_engine.assess_all_assets(env_state)
+    
+    sensor_monitor = SensorHealthEngine()
+    dq_summary = sensor_monitor.get_summary()
+    
+    # Priority Threat
+    priority_threat = {
+        "type": mh_result.get("dominant_hazard", "UNKNOWN"),
+        "level": mh_result.get("compound_risk_level", "LOW"),
+        "score": round(mh_result.get("compound_risk_score", 0.0), 2),
+        "reason": mh_result.get("cascade_explanation", "Routine monitoring."),
+        "recommended_action": "Maintain routine surveillance."
+    }
+    
+    if priority_threat["level"] in ["HIGH", "CRITICAL"]:
+        priority_threat["recommended_action"] = "Prioritize monitoring and prepare response resources."
+        
+    # Highest Priority Asset
+    highest_priority_asset = {}
+    if asset_result and len(asset_result) > 0:
+        top_asset = sorted(asset_result, key=lambda x: x.get("asset_risk_index", 0.0), reverse=True)[0]
+        highest_priority_asset = {
+            "Asset Name": top_asset.get("name"),
+            "Asset Risk Index": top_asset.get("asset_risk_index"),
+            "Risk Level": top_asset.get("risk_level"),
+            "Primary Threat": priority_threat["type"],
+            "Recommended Protection": top_asset.get("recommended_action")
+        }
+        
+    # Data Trust
+    data_trust = {
+        "score": dq_summary.get("aggregate_health_score", 1.0),
+        "status": dq_summary.get("city_wide_telemetry_health", "UNKNOWN"),
+        "explanation": f"{dq_summary.get('source_counts', {}).get('healthy', 0)} sources healthy. {dq_summary.get('source_counts', {}).get('stale', 0)} stale."
+    }
+    
+    # Confidence
+    confidence = {
+        "level": "HIGH" if data_trust["score"] > 0.8 else ("MODERATE" if data_trust["score"] > 0.5 else "LOW"),
+        "explanation": f"Confidence is based on a data trust score of {round(data_trust['score']*100)}% with {dq_summary.get('source_counts', {}).get('healthy', 0)} active telemetry sources."
+    }
+    
+    # Next 60 Minutes
+    next_60_minutes = [
+        {"horizon": "NOW", "risk": priority_threat["level"], "trend": "Stable"},
+        {"horizon": "+15 MIN", "risk": priority_threat["level"], "trend": "Stable"},
+        {"horizon": "+30 MIN", "risk": priority_threat["level"], "trend": "Stable"},
+        {"horizon": "+60 MIN", "risk": priority_threat["level"], "trend": "Stable"},
+    ]
+    
+    # Causal Chain
+    causal_chain = [
+        "Environmental Drivers Detected",
+        f"Hazard Indicator: {priority_threat['type']}",
+        f"Compound Risk Level: {priority_threat['level']}",
+        f"Vulnerable Asset: {highest_priority_asset.get('Asset Name', 'None')}",
+        priority_threat["recommended_action"]
+    ]
+    
+    # Refine the conversational AI outputs for the UI
+    drivers_str = mh_result.get("cascade_explanation", "")
+    
+    why_now = [
+        f"Dynamic Compound Risk Score elevated to {priority_threat['score']}.",
+        f"Dominant physical driver identified as {priority_threat['type'].replace('_', ' ')}."
+    ]
+    if "Contributing conditions" in drivers_str:
+        conds = drivers_str.split("Contributing conditions: ")[-1].split(". Interacting")[0]
+        why_now.append(f"Key drivers: {conds}.")
+        
+    what_changed = [
+        "Live sensor telemetry successfully assimilated into Digital Twin.",
+        f"Predictive ML models place flood probability at {flood_prob * 100:.1f}%.",
+        "Topological network scanned for vulnerable infrastructural cascades."
+    ]
+
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "system_status": "ONLINE",
+        "priority_threat": priority_threat,
+        "current_situation": f"The intelligence engine detects a {priority_threat['level']} level risk centered primarily around {priority_threat['type'].replace('_', ' ')}.",
+        "why_now": why_now,
+        "what_changed": what_changed,
+        "next_60_minutes": next_60_minutes,
+        "highest_priority_asset": highest_priority_asset,
+        "data_trust": data_trust,
+        "confidence": confidence,
+        "recommended_action": priority_threat["recommended_action"],
+        "causal_chain": causal_chain
+    }

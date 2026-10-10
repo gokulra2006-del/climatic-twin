@@ -1,0 +1,122 @@
+{
+  "ZONE_NORTH_INDUSTRIAL_MANALI": {
+    "name": "North Chennai Industrial & Ennore Littoral",
+    "current_sfii": 0.68,
+    "forecast_progression": {
+      "current": 0.68,
+      "15m": 0.707,
+      "30m": 0.734,
+      "60m": 0.782
+    },
+    "prediction_interval": {
+      "lower": 0.56,
+      "upper": 0.83,
+      "coverage": "90%"
+    }
+  },
+  "ZONE_ADYAR_ESTUARY": {
+    "name": "Coastal Adyar Estuary & Lowland Plain",
+    "current_sfii": 0.669,
+    "forecast_progression": {
+      "current": 0.669,
+      "15m": 0.696,
+      "30m": 0.723,
+      "60m": 0.769
+    },
+    "prediction_interval": {
+      "lower": 0.549,
+      "upper": 0.819,
+      "coverage": "90%"
+    }
+  },
+  "ZONE_COOUM_CORRIDOR": {
+    "name": "Central Cooum River Urban Basin",
+    "current_sfii": 0.659,
+    "forecast_progression": {
+      "current": 0.659,
+      "15m": 0.685,
+      "30m": 0.712,
+      "60m": 0.758
+    },
+    "prediction_interval": {
+      "lower": 0.539,
+      "upper": 0.809,
+      "coverage": "90%"
+    }
+  },
+  "ZONE_SOUTH_COASTAL_VELACHERY": {
+    "name": "South Chennai Pallikaranai & Velachery Basin",
+    "current_sfii": 0.653,
+    "forecast_progression": {
+      "current": 0.653,
+      "15m": 0.679,
+      "30m": 0.705,
+      "60m": 0.751
+    },
+    "prediction_interval": {
+      "lower": 0.533,
+      "upper": 0.803,
+      "coverage": "90%"
+    }
+  },
+  "ZONE_CHEMBARAMBAKKAM_UPSTREAM": {
+    "name": "Western Chembarambakkam Reservoir Headwaters",
+    "current_sfii": 0.624,
+    "forecast_progression": {
+      "current": 0.624,
+      "15m": 0.649,
+      "30m": 0.674,
+      "60m": 0.718
+    },
+    "prediction_interval": {
+      "lower": 0.504,
+      "upper": 0.774,
+      "coverage": "90%"
+    }
+  },
+  "ZONE_KOSASTHALAIYAR_NORTH": {
+    "name": "Northern Kosasthalaiyar & Puzhal Basin",
+    "current_sfii": 0.619,
+    "forecast_progression": {
+      "current": 0.619,
+      "15m": 0.644,
+      "30m": 0.669,
+      "60m": 0.712
+    },
+    "prediction_interval": {
+      "lower": 0.499,
+      "upper": 0.769,
+      "coverage": "90%"
+    }
+  },
+  "ZONE_POONDI_UPLANDS": {
+    "name": "Northwestern Poondi Headwaters & Uplands",
+    "current_sfii": 0.581,
+    "forecast_progression": {
+      "current": 0.581,
+      "15m": 0.604,
+      "30m": 0.627,
+      "60m": 0.668
+    },
+    "prediction_interval": {
+      "lower": 0.461,
+      "upper": 0.731,
+      "coverage": "90%"
+    }
+  },
+  "ZONE_SOUTHWEST_TAMBARAM": {
+    "name": "Southwestern Tambaram & Guindy Urban Foothills",
+    "current_sfii": 0.569,
+    "forecast_progression": {
+      "current": 0.569,
+      "15m": 0.592,
+      "30m": 0.615,
+      "60m": 0.654
+    },
+    "prediction_interval": {
+      "lower": 0.449,
+      "upper": 0.719,
+      "coverage": "90%"
+    }
+  }
+}

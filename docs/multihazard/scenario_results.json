@@ -1,0 +1,355 @@
+{
+  "SCENARIO_A_NOMINAL": {
+    "timestamp": "2026-09-02T08:17:01.918205+00:00",
+    "compound_risk_score": 0.122,
+    "compound_risk_level": "LOW",
+    "dominant_hazard": "HEAT_STRESS_HUMIDITY",
+    "base_component_score": 0.122,
+    "interaction_bonus_score": 0.0,
+    "hazards": {
+      "rainfall": {
+        "hazard_name": "EXTREME_RAINFALL",
+        "observed_value": "2.0 mm/day (0.1 mm/hr)",
+        "normalized_intensity": 0.016,
+        "hazard_level": "LOW",
+        "data_source": "NASA GPM IMERG V07B",
+        "category": "OBSERVED / DERIVED"
+      },
+      "flood": {
+        "hazard_name": "FLOOD_INUNDATION",
+        "observed_value": "8.0% Probability",
+        "normalized_intensity": 0.08,
+        "hazard_level": "LOW",
+        "data_source": "Random Forest Ensemble (B=100)",
+        "category": "MODEL-PREDICTED"
+      },
+      "reservoir_stress": {
+        "hazard_name": "RESERVOIR_HYDROLOGICAL_STRESS",
+        "observed_value": "3900 mcft (35.0% Capacity)",
+        "normalized_intensity": 0.262,
+        "hazard_level": "MODERATE",
+        "data_source": "CMWSSB Water Authority Gauges",
+        "category": "OBSERVED / ASSIMILATED"
+      },
+      "wind": {
+        "hazard_name": "HIGH_WIND_GUST",
+        "observed_value": "3.0 m/s",
+        "normalized_intensity": 0.12,
+        "hazard_level": "LOW",
+        "data_source": "NOAA ISD Station 432790",
+        "category": "OBSERVED"
+      },
+      "heat": {
+        "hazard_name": "HEAT_STRESS_HUMIDITY",
+        "observed_value": "31.0\u00b0C (Dew Point: 22.0\u00b0C)",
+        "normalized_intensity": 0.462,
+        "hazard_level": "MODERATE",
+        "data_source": "NOAA ISD Station 432790",
+        "category": "DERIVED"
+      },
+      "runoff": {
+        "hazard_name": "TOPOGRAPHIC_RUNOFF_POOLING",
+        "observed_value": "Elevation: 12.0 m (Low-Lying Basin)",
+        "normalized_intensity": 0.05,
+        "hazard_level": "LOW",
+        "data_source": "Copernicus DEM 30m",
+        "category": "DERIVED"
+      }
+    },
+    "active_interactions": [],
+    "cascade_explanation": "Compound risk level LOW (Score: 0.12). Dominant driver: HEAT_STRESS_HUMIDITY. Contributing conditions: Nominal baseline environmental conditions across catchment. Interacting pairs: No severe compound interactions active.",
+    "flood_uncertainty": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "methodology_label": "RULE-BASED NON-LINEAR COMPOUND RISK INDEX (CRS)",
+    "scenario_meta": {
+      "scenario_id": "SCENARIO_A_NOMINAL",
+      "name": "Scenario A \u2014 Nominal Baseline",
+      "description": "Dry weather, nominal reservoir levels (35%), calm winds.",
+      "simulation_tag": "SIMULATED SCENARIO"
+    }
+  },
+  "SCENARIO_B_HEAVY_RAIN": {
+    "timestamp": "2026-09-02T08:17:01.918205+00:00",
+    "compound_risk_score": 0.649,
+    "compound_risk_level": "HIGH",
+    "dominant_hazard": "EXTREME_RAINFALL",
+    "base_component_score": 0.521,
+    "interaction_bonus_score": 0.128,
+    "hazards": {
+      "rainfall": {
+        "hazard_name": "EXTREME_RAINFALL",
+        "observed_value": "85.0 mm/day (12.0 mm/hr)",
+        "normalized_intensity": 0.835,
+        "hazard_level": "CRITICAL",
+        "data_source": "NASA GPM IMERG V07B",
+        "category": "OBSERVED / DERIVED"
+      },
+      "flood": {
+        "hazard_name": "FLOOD_INUNDATION",
+        "observed_value": "55.0% Probability",
+        "normalized_intensity": 0.55,
+        "hazard_level": "HIGH",
+        "data_source": "Random Forest Ensemble (B=100)",
+        "category": "MODEL-PREDICTED"
+      },
+      "reservoir_stress": {
+        "hazard_name": "RESERVOIR_HYDROLOGICAL_STRESS",
+        "observed_value": "4500 mcft (40.0% Capacity)",
+        "normalized_intensity": 0.3,
+        "hazard_level": "MODERATE",
+        "data_source": "CMWSSB Water Authority Gauges",
+        "category": "OBSERVED / ASSIMILATED"
+      },
+      "wind": {
+        "hazard_name": "HIGH_WIND_GUST",
+        "observed_value": "8.0 m/s",
+        "normalized_intensity": 0.32,
+        "hazard_level": "MODERATE",
+        "data_source": "NOAA ISD Station 432790",
+        "category": "OBSERVED"
+      },
+      "heat": {
+        "hazard_name": "HEAT_STRESS_HUMIDITY",
+        "observed_value": "27.0\u00b0C (Dew Point: 24.0\u00b0C)",
+        "normalized_intensity": 0.349,
+        "hazard_level": "MODERATE",
+        "data_source": "NOAA ISD Station 432790",
+        "category": "DERIVED"
+      },
+      "runoff": {
+        "hazard_name": "TOPOGRAPHIC_RUNOFF_POOLING",
+        "observed_value": "Elevation: 8.0 m (Low-Lying Basin)",
+        "normalized_intensity": 0.2,
+        "hazard_level": "LOW",
+        "data_source": "Copernicus DEM 30m",
+        "category": "DERIVED"
+      }
+    },
+    "active_interactions": [
+      {
+        "interaction_id": "INT_HYD_COUPLING",
+        "name": "HIGH_RAINFALL + RESERVOIR_CAPACITY_STRESS",
+        "coupling_strength": 0.251,
+        "description": "Torrential precipitation coinciding with saturated reservoir capacity increases imminent spillway surge risk."
+      },
+      {
+        "interaction_id": "INT_TOP_RUNOFF",
+        "name": "HIGH_RAINFALL + LOW_ELEVATION_POOLING",
+        "coupling_strength": 0.167,
+        "description": "Intense precipitation on low-lying coastal terrain promotes immediate surface pooling."
+      },
+      {
+        "interaction_id": "INT_CYC_STRESS",
+        "name": "HIGH_RAINFALL + CYCLONIC_GALE_WINDS",
+        "coupling_strength": 0.267,
+        "description": "Simultaneous torrential rain and strong winds threaten utility infrastructure and drainage outfalls."
+      }
+    ],
+    "cascade_explanation": "Compound risk level HIGH (Score: 0.65). Dominant driver: EXTREME_RAINFALL. Contributing conditions: Elevated predictive flood probability (55%), Intense active/antecedent precipitation. Interacting pairs: HIGH_RAINFALL + RESERVOIR_CAPACITY_STRESS, HIGH_RAINFALL + LOW_ELEVATION_POOLING, HIGH_RAINFALL + CYCLONIC_GALE_WINDS.",
+    "flood_uncertainty": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "methodology_label": "RULE-BASED NON-LINEAR COMPOUND RISK INDEX (CRS)",
+    "scenario_meta": {
+      "scenario_id": "SCENARIO_B_HEAVY_RAIN",
+      "name": "Scenario B \u2014 Heavy Monsoonal Rainfall",
+      "description": "Intense active precipitation (85mm/day) with nominal reservoir capacity (40%).",
+      "simulation_tag": "SIMULATED SCENARIO"
+    }
+  },
+  "SCENARIO_C_RAIN_PLUS_FULL_RESERVOIR": {
+    "timestamp": "2026-09-02T08:17:01.918205+00:00",
+    "compound_risk_score": 1.0,
+    "compound_risk_level": "CRITICAL",
+    "dominant_hazard": "EXTREME_RAINFALL",
+    "base_component_score": 0.745,
+    "interaction_bonus_score": 0.261,
+    "hazards": {
+      "rainfall": {
+        "hazard_name": "EXTREME_RAINFALL",
+        "observed_value": "95.0 mm/day (15.0 mm/hr)",
+        "normalized_intensity": 0.965,
+        "hazard_level": "CRITICAL",
+        "data_source": "NASA GPM IMERG V07B",
+        "category": "OBSERVED / DERIVED"
+      },
+      "flood": {
+        "hazard_name": "FLOOD_INUNDATION",
+        "observed_value": "85.0% Probability",
+        "normalized_intensity": 0.85,
+        "hazard_level": "CRITICAL",
+        "data_source": "Random Forest Ensemble (B=100)",
+        "category": "MODEL-PREDICTED"
+      },
+      "reservoir_stress": {
+        "hazard_name": "RESERVOIR_HYDROLOGICAL_STRESS",
+        "observed_value": "10350 mcft (92.0% Capacity)",
+        "normalized_intensity": 0.69,
+        "hazard_level": "HIGH",
+        "data_source": "CMWSSB Water Authority Gauges",
+        "category": "OBSERVED / ASSIMILATED"
+      },
+      "wind": {
+        "hazard_name": "HIGH_WIND_GUST",
+        "observed_value": "10.0 m/s",
+        "normalized_intensity": 0.4,
+        "hazard_level": "MODERATE",
+        "data_source": "NOAA ISD Station 432790",
+        "category": "OBSERVED"
+      },
+      "heat": {
+        "hazard_name": "HEAT_STRESS_HUMIDITY",
+        "observed_value": "26.0\u00b0C (Dew Point: 24.5\u00b0C)",
+        "normalized_intensity": 0.322,
+        "hazard_level": "MODERATE",
+        "data_source": "NOAA ISD Station 432790",
+        "category": "DERIVED"
+      },
+      "runoff": {
+        "hazard_name": "TOPOGRAPHIC_RUNOFF_POOLING",
+        "observed_value": "Elevation: 7.5 m (Low-Lying Basin)",
+        "normalized_intensity": 0.25,
+        "hazard_level": "MODERATE",
+        "data_source": "Copernicus DEM 30m",
+        "category": "DERIVED"
+      }
+    },
+    "active_interactions": [
+      {
+        "interaction_id": "INT_HYD_COUPLING",
+        "name": "HIGH_RAINFALL + RESERVOIR_CAPACITY_STRESS",
+        "coupling_strength": 0.666,
+        "description": "Torrential precipitation coinciding with saturated reservoir capacity increases imminent spillway surge risk."
+      },
+      {
+        "interaction_id": "INT_TOP_RUNOFF",
+        "name": "HIGH_RAINFALL + LOW_ELEVATION_POOLING",
+        "coupling_strength": 0.241,
+        "description": "Intense precipitation on low-lying coastal terrain promotes immediate surface pooling."
+      },
+      {
+        "interaction_id": "INT_CYC_STRESS",
+        "name": "HIGH_RAINFALL + CYCLONIC_GALE_WINDS",
+        "coupling_strength": 0.386,
+        "description": "Simultaneous torrential rain and strong winds threaten utility infrastructure and drainage outfalls."
+      }
+    ],
+    "cascade_explanation": "Compound risk level CRITICAL (Score: 1.00). Dominant driver: EXTREME_RAINFALL. Contributing conditions: Elevated predictive flood probability (85%), Intense active/antecedent precipitation, High reservoir capacity saturation, Strong cyclonic wind gusts. Interacting pairs: HIGH_RAINFALL + RESERVOIR_CAPACITY_STRESS, HIGH_RAINFALL + LOW_ELEVATION_POOLING, HIGH_RAINFALL + CYCLONIC_GALE_WINDS.",
+    "flood_uncertainty": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "methodology_label": "RULE-BASED NON-LINEAR COMPOUND RISK INDEX (CRS)",
+    "scenario_meta": {
+      "scenario_id": "SCENARIO_C_RAIN_PLUS_FULL_RESERVOIR",
+      "name": "Scenario C \u2014 Heavy Rain + Saturated Reservoirs",
+      "description": "High rainfall (95mm/day) coinciding with 92% full reservoir capacity.",
+      "simulation_tag": "SIMULATED SCENARIO"
+    }
+  },
+  "SCENARIO_D_EXTREME_CYCLONIC_DELUGE": {
+    "timestamp": "2026-09-02T08:17:01.918205+00:00",
+    "compound_risk_score": 1.0,
+    "compound_risk_level": "CRITICAL",
+    "dominant_hazard": "EXTREME_RAINFALL",
+    "base_component_score": 0.875,
+    "interaction_bonus_score": 0.403,
+    "hazards": {
+      "rainfall": {
+        "hazard_name": "EXTREME_RAINFALL",
+        "observed_value": "180.0 mm/day (28.0 mm/hr)",
+        "normalized_intensity": 1.0,
+        "hazard_level": "CRITICAL",
+        "data_source": "NASA GPM IMERG V07B",
+        "category": "OBSERVED / DERIVED"
+      },
+      "flood": {
+        "hazard_name": "FLOOD_INUNDATION",
+        "observed_value": "98.0% Probability",
+        "normalized_intensity": 0.98,
+        "hazard_level": "CRITICAL",
+        "data_source": "Random Forest Ensemble (B=100)",
+        "category": "MODEL-PREDICTED"
+      },
+      "reservoir_stress": {
+        "hazard_name": "RESERVOIR_HYDROLOGICAL_STRESS",
+        "observed_value": "11000 mcft (98.0% Capacity)",
+        "normalized_intensity": 0.735,
+        "hazard_level": "HIGH",
+        "data_source": "CMWSSB Water Authority Gauges",
+        "category": "OBSERVED / ASSIMILATED"
+      },
+      "wind": {
+        "hazard_name": "HIGH_WIND_GUST",
+        "observed_value": "24.0 m/s",
+        "normalized_intensity": 0.96,
+        "hazard_level": "CRITICAL",
+        "data_source": "NOAA ISD Station 432790",
+        "category": "OBSERVED"
+      },
+      "heat": {
+        "hazard_name": "HEAT_STRESS_HUMIDITY",
+        "observed_value": "25.0\u00b0C (Dew Point: 24.8\u00b0C)",
+        "normalized_intensity": 0.285,
+        "hazard_level": "MODERATE",
+        "data_source": "NOAA ISD Station 432790",
+        "category": "DERIVED"
+      },
+      "runoff": {
+        "hazard_name": "TOPOGRAPHIC_RUNOFF_POOLING",
+        "observed_value": "Elevation: 5.0 m (Low-Lying Basin)",
+        "normalized_intensity": 0.5,
+        "hazard_level": "HIGH",
+        "data_source": "Copernicus DEM 30m",
+        "category": "DERIVED"
+      }
+    },
+    "active_interactions": [
+      {
+        "interaction_id": "INT_HYD_COUPLING",
+        "name": "HIGH_RAINFALL + RESERVOIR_CAPACITY_STRESS",
+        "coupling_strength": 0.735,
+        "description": "Torrential precipitation coinciding with saturated reservoir capacity increases imminent spillway surge risk."
+      },
+      {
+        "interaction_id": "INT_TOP_RUNOFF",
+        "name": "HIGH_RAINFALL + LOW_ELEVATION_POOLING",
+        "coupling_strength": 0.5,
+        "description": "Intense precipitation on low-lying coastal terrain promotes immediate surface pooling."
+      },
+      {
+        "interaction_id": "INT_CYC_STRESS",
+        "name": "HIGH_RAINFALL + CYCLONIC_GALE_WINDS",
+        "coupling_strength": 0.96,
+        "description": "Simultaneous torrential rain and strong winds threaten utility infrastructure and drainage outfalls."
+      }
+    ],
+    "cascade_explanation": "Compound risk level CRITICAL (Score: 1.00). Dominant driver: EXTREME_RAINFALL. Contributing conditions: Elevated predictive flood probability (98%), Intense active/antecedent precipitation, High reservoir capacity saturation, Strong cyclonic wind gusts, Low-lying topographic pooling vulnerability. Interacting pairs: HIGH_RAINFALL + RESERVOIR_CAPACITY_STRESS, HIGH_RAINFALL + LOW_ELEVATION_POOLING, HIGH_RAINFALL + CYCLONIC_GALE_WINDS.",
+    "flood_uncertainty": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "methodology_label": "RULE-BASED NON-LINEAR COMPOUND RISK INDEX (CRS)",
+    "scenario_meta": {
+      "scenario_id": "SCENARIO_D_EXTREME_CYCLONIC_DELUGE",
+      "name": "Scenario D \u2014 Extreme Cyclonic Super-Storm",
+      "description": "Torrential deluge (180mm), brimming reservoirs (98%), and cyclonic gale winds (24 m/s).",
+      "simulation_tag": "SIMULATED SCENARIO"
+    }
+  }
+}

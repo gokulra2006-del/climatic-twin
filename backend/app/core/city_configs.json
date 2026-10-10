@@ -1,0 +1,1 @@
+{"chennai": {"features": ["rain", "temp", "humidity", "wind"], "reservoirs": ["poondi", "cholavaram", "redhills", "chembarambakkam"], "critical_thresholds": {"rain_mm": 150}}, "mumbai": {"features": ["rain", "temp", "humidity", "wind"], "reservoirs": ["vihar", "tulsi", "tansa", "bhatsa"], "critical_thresholds": {"rain_mm": 200}}}

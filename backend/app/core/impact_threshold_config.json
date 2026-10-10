@@ -1,0 +1,28 @@
+{
+  "impact_thresholds": {
+    "road_inundation": {
+      "value": 150.0,
+      "unit": "mm",
+      "citation": "World Bank (2018), Chennai City Road Vulnerability Assessment",
+      "justification": "Standard vehicular access fails at 150mm of standing water."
+    },
+    "pump_overload": {
+      "value": 5.0,
+      "unit": "m3_s",
+      "citation": "CMWSSB Design Guidelines (2015)",
+      "justification": "Standard municipal lift stations exceed duty capacity above 5.0 m3/s."
+    },
+    "reservoir_overflow": {
+      "value": 95.0,
+      "unit": "percent_capacity",
+      "citation": "PWD Flood Manual (2020)",
+      "justification": "Emergency sluice gates open at 95% Full Reservoir Level (FRL)."
+    },
+    "critical_asset_disruption": {
+      "value": 200.0,
+      "unit": "mm",
+      "citation": "NDMA Critical Infrastructure Framework",
+      "justification": "Hospital plinths often compromised at 200mm."
+    }
+  }
+}

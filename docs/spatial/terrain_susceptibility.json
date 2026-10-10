@@ -1,0 +1,50 @@
+{
+  "ZONE_NORTH_INDUSTRIAL_MANALI": {
+    "name": "North Chennai Industrial & Ennore Littoral",
+    "dem_elevation_m": 0.5,
+    "terrain_susceptibility": 0.98,
+    "drainage_proximity_factor": 0.98
+  },
+  "ZONE_ADYAR_ESTUARY": {
+    "name": "Coastal Adyar Estuary & Lowland Plain",
+    "dem_elevation_m": 14.6,
+    "terrain_susceptibility": 0.658,
+    "drainage_proximity_factor": 0.51
+  },
+  "ZONE_COOUM_CORRIDOR": {
+    "name": "Central Cooum River Urban Basin",
+    "dem_elevation_m": 8.3,
+    "terrain_susceptibility": 0.779,
+    "drainage_proximity_factor": 0.72
+  },
+  "ZONE_SOUTH_COASTAL_VELACHERY": {
+    "name": "South Chennai Pallikaranai & Velachery Basin",
+    "dem_elevation_m": 5.3,
+    "terrain_susceptibility": 0.595,
+    "drainage_proximity_factor": 0.82
+  },
+  "ZONE_CHEMBARAMBAKKAM_UPSTREAM": {
+    "name": "Western Chembarambakkam Reservoir Headwaters",
+    "dem_elevation_m": 21.0,
+    "terrain_susceptibility": 0.423,
+    "drainage_proximity_factor": 0.3
+  },
+  "ZONE_KOSASTHALAIYAR_NORTH": {
+    "name": "Northern Kosasthalaiyar & Puzhal Basin",
+    "dem_elevation_m": 13.0,
+    "terrain_susceptibility": 0.522,
+    "drainage_proximity_factor": 0.57
+  },
+  "ZONE_POONDI_UPLANDS": {
+    "name": "Northwestern Poondi Headwaters & Uplands",
+    "dem_elevation_m": 40.5,
+    "terrain_susceptibility": 0.284,
+    "drainage_proximity_factor": -0.35
+  },
+  "ZONE_SOUTHWEST_TAMBARAM": {
+    "name": "Southwestern Tambaram & Guindy Urban Foothills",
+    "dem_elevation_m": 28.9,
+    "terrain_susceptibility": 0.044,
+    "drainage_proximity_factor": 0.04
+  }
+}

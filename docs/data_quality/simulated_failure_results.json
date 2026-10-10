@@ -1,0 +1,106 @@
+{
+  "SCENARIO_1_MISSING_SENSOR": {
+    "description": "Simulated complete packet loss on Cholavaram gauge",
+    "city_wide_health": "GOOD",
+    "aggregate_score": 0.854,
+    "source_counts": {
+      "total_sources": 8,
+      "healthy": 7,
+      "degraded": 0,
+      "stale": 0,
+      "anomalous": 0,
+      "missing_or_offline": 1
+    }
+  },
+  "SCENARIO_2_STALE_SENSOR": {
+    "description": "Simulated satellite downlink delay of 4 hours",
+    "city_wide_health": "EXCELLENT",
+    "aggregate_score": 0.92,
+    "source_counts": {
+      "total_sources": 8,
+      "healthy": 7,
+      "degraded": 0,
+      "stale": 1,
+      "anomalous": 0,
+      "missing_or_offline": 0
+    }
+  },
+  "SCENARIO_3_STUCK_SENSOR": {
+    "description": "Simulated frozen temperature transducer at 31.2\u00b0C",
+    "city_wide_health": "EXCELLENT",
+    "aggregate_score": 0.971,
+    "source_counts": {
+      "total_sources": 8,
+      "healthy": 7,
+      "degraded": 1,
+      "stale": 0,
+      "anomalous": 0,
+      "missing_or_offline": 0
+    }
+  },
+  "SCENARIO_4_SUDDEN_SPIKE": {
+    "description": "Simulated sudden 3.5x unphysical volume surge",
+    "city_wide_health": "EXCELLENT",
+    "aggregate_score": 0.91,
+    "source_counts": {
+      "total_sources": 8,
+      "healthy": 7,
+      "degraded": 0,
+      "stale": 0,
+      "anomalous": 1,
+      "missing_or_offline": 0
+    }
+  },
+  "SCENARIO_5_IMPOSSIBLE_VALUE": {
+    "description": "Simulated corruption with -99.0 mm/day rainfall",
+    "city_wide_health": "EXCELLENT",
+    "aggregate_score": 0.922,
+    "source_counts": {
+      "total_sources": 8,
+      "healthy": 7,
+      "degraded": 0,
+      "stale": 0,
+      "anomalous": 1,
+      "missing_or_offline": 0
+    }
+  },
+  "SCENARIO_6_OFFLINE_SOURCE": {
+    "description": "Simulated radar power outage and drop",
+    "city_wide_health": "GOOD",
+    "aggregate_score": 0.859,
+    "source_counts": {
+      "total_sources": 8,
+      "healthy": 7,
+      "degraded": 0,
+      "stale": 0,
+      "anomalous": 0,
+      "missing_or_offline": 1
+    }
+  },
+  "SCENARIO_7_COMPOUND_DEGRADATION": {
+    "description": "Simulated multi-source telemetry degradation",
+    "city_wide_health": "EXCELLENT",
+    "aggregate_score": 0.931,
+    "source_counts": {
+      "total_sources": 8,
+      "healthy": 7,
+      "degraded": 0,
+      "stale": 1,
+      "anomalous": 0,
+      "missing_or_offline": 0
+    }
+  },
+  "SCENARIO_8_RECOVERY_NOMINAL": {
+    "description": "Simulated full telemetry recovery and nominal restore",
+    "city_wide_health": "EXCELLENT",
+    "aggregate_score": 0.977,
+    "source_counts": {
+      "total_sources": 8,
+      "healthy": 8,
+      "degraded": 0,
+      "stale": 0,
+      "anomalous": 0,
+      "missing_or_offline": 0
+    }
+  }
+}

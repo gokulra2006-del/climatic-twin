@@ -1,0 +1,31 @@
+{
+    "evaluation_metrics": {
+        "RandomForest": {
+            "ROC-AUC": 0.9014,
+            "PR-AUC": 0.0539,
+            "F1": 0.0909,
+            "Recall": 0.75,
+            "Brier": 0.0677,
+            "Latency_ms": 8.6
+        },
+        "HistGradientBoosting": {
+            "ROC-AUC": 0.5753,
+            "PR-AUC": 0.0045,
+            "F1": 0.0,
+            "Recall": 0.0,
+            "Brier": 0.0403,
+            "Latency_ms": 2.7
+        },
+        "DeepLearning_MLP": {
+            "ROC-AUC": 0.6803,
+            "PR-AUC": 0.0056,
+            "F1": 0.0,
+            "Recall": 0.0,
+            "Brier": 0.0702,
+            "Latency_ms": 1.0
+        }
+    },
+    "selected_model": "RandomForest",
+    "selection_reason": "Highest PR-AUC and Recall on chronological unseen test data. Deep learning was evaluated but did not outperform tree ensembles on this specific dataset shape and size.",
+    "calibration_brier_improvement": 0.048021291263997914
+}

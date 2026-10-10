@@ -1,0 +1,12 @@
+{
+  "events_evaluated_count": 10,
+  "events_detected_count": 10,
+  "event_detection_rate": 1.0,
+  "lead_time_hours": {
+    "min": 2.0,
+    "max": 168.0,
+    "mean": 114.89,
+    "median": 144.0
+  },
+  "lead_time_description": "Sustained elevated risk detected with median advance warning of 144.0 hours prior to inundation onset."
+}

@@ -1,0 +1,29 @@
+{
+  "model_version": "ClimateTwin-Flood-HGB-v2.1",
+  "role": "CANDIDATE",
+  "evaluated_date": "2026-09-13T15:40:00Z",
+  "algorithm": "HistGradientBoostingClassifier (Isotonic Calibrated)",
+  "features": [
+    "rainfall_daily", "rainfall_3d_sum", "rainfall_5d_sum", "rainfall_7d_sum",
+    "rainfall_rate_1h", "rainfall_trend",
+    "temp_mean", "temp_max", "temp_min", "dew_point_mean", "dew_point_depression",
+    "wind_speed_mean", "wind_speed_trend",
+    "POONDI", "CHOLAVARAM", "REDHILLS", "CHEMBARAMBAKKAM",
+    "total_reservoir_level", "reservoir_fill_ratio", "reservoir_storage_rate_1d"
+  ],
+  "training_period": "2015-01-01 to 2018-12-31",
+  "validation_period": "2019-01-01 to 2020-12-31",
+  "training_samples": 1157,
+  "metrics": {
+    "roc_auc": 0.8842,
+    "pr_auc": 0.0482,
+    "f1_score": 0.0815,
+    "recall": 0.6667,
+    "precision": 0.0465,
+    "brier_score": 0.0221,
+    "ece": 0.0392
+  },
+  "champion_comparison_result": "DO_NOT_REPLACE_CHAMPION",
+  "comparison_notes": "Candidate does not exceed champion in PR-AUC (0.0482 vs 0.0539) or Recall (0.6667 vs 0.7500). Champion retained.",
+  "deployment_status": "REJECTED_FOR_PRODUCTION"
+}

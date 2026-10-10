@@ -1,0 +1,121 @@
+{
+  "kaggle": {
+    "provider": "Kaggle",
+    "dataset_name": "sudalairajkumar/chennai-water-management",
+    "auth_status": "OK",
+    "status": "PASS",
+    "errors": [],
+    "actual_checksum": "3b4b6f2f53b5db20513d2829c2dba265c5738a55bf0c8eade51e0e2d5cfeaef7",
+    "record_count": 6182,
+    "min_date": "2004-01-01T00:00:00",
+    "max_date": "2020-12-03T00:00:00",
+    "duplicate_dates": 0,
+    "missing_values": 0
+  },
+  "nasa_imerg": {
+    "provider": "NASA GES DISC",
+    "dataset_name": "GPM_3IMERGHH_07",
+    "auth_status": "OK",
+    "status": "PASS",
+    "errors": [],
+    "expected_files": 3792,
+    "actual_files": 3792,
+    "zero_byte_files": 0,
+    "corrupt_files": 0,
+    "validated_samples": [
+      "3B-HHR.MS.MRG.3IMERG.20151101-S000000-E002959.0000.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20151109-S183000-E185959.1110.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20151118-S130000-E132959.0780.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20151127-S073000-E075959.0450.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20151206-S020000-E022959.0120.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20211104-S210000-E212959.1260.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20211113-S153000-E155959.0930.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20231204-S100000-E102959.0600.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20241127-S043000-E045959.0270.V07B.HDF5",
+      "3B-HHR.MS.MRG.3IMERG.20241205-S233000-E235959.1410.V07B.HDF5"
+    ]
+  },
+  "copernicus_dem": {
+    "provider": "ESA / Copernicus",
+    "dataset_name": "Copernicus DEM GLO-30",
+    "status": "PASS",
+    "errors": [],
+    "expected_tiles": 4,
+    "actual_tiles": 4,
+    "tile_stats": {
+      "N12E079": {
+        "crs": "EPSG:4326",
+        "resolution": [
+          0.0002777777777777778,
+          0.0002777777777777778
+        ],
+        "bounds": [
+          78.99986111111112,
+          12.00013888888889,
+          79.99986111111112,
+          13.00013888888889
+        ],
+        "min_elevation": -4.224672317504883,
+        "max_elevation": 1073.0667724609375,
+        "mean_elevation": 116.08977508544922
+      },
+      "N12E080": {
+        "crs": "EPSG:4326",
+        "resolution": [
+          0.0002777777777777778,
+          0.0002777777777777778
+        ],
+        "bounds": [
+          79.99986111111112,
+          12.00013888888889,
+          80.99986111111112,
+          13.00013888888889
+        ],
+        "min_elevation": -65.54777526855469,
+        "max_elevation": 214.2122039794922,
+        "mean_elevation": 2.7884576320648193
+      },
+      "N13E079": {
+        "crs": "EPSG:4326",
+        "resolution": [
+          0.0002777777777777778,
+          0.0002777777777777778
+        ],
+        "bounds": [
+          78.99986111111112,
+          13.00013888888889,
+          79.99986111111112,
+          14.00013888888889
+        ],
+        "min_elevation": -8.01578140258789,
+        "max_elevation": 1145.946044921875,
+        "mean_elevation": 237.97621154785156
+      },
+      "N13E080": {
+        "crs": "EPSG:4326",
+        "resolution": [
+          0.0002777777777777778,
+          0.0002777777777777778
+        ],
+        "bounds": [
+          79.99986111111112,
+          13.00013888888889,
+          80.99986111111112,
+          14.00013888888889
+        ],
+        "min_elevation": -19.155868530273438,
+        "max_elevation": 79.38639068603516,
+        "mean_elevation": 2.90012264251709
+      }
+    }
+  },
+  "reproducibility": {
+    "process_cmwssb.py": "FOUND (Usable)",
+    "process_dem.py": "FOUND (Usable)",
+    "process_imerg.py": "FOUND (Usable)"
+  },
+  "cross_consistency": {
+    "status": "PASS",
+    "errors": []
+  }
+}

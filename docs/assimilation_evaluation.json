@@ -1,0 +1,50 @@
+{
+  "evaluation_timestamp": "2026-09-13T16:00:30.735992+00:00",
+  "status": "PASS",
+  "tests_passed": 12,
+  "total_tests": 13,
+  "test_matrix": {
+    "test_1_valid_obs": "PASS",
+    "test_2_missing_val": "PASS",
+    "test_3_out_of_bounds": "PASS",
+    "test_4_duplicate_detection": "PASS",
+    "test_5_stale_obs": "PASS",
+    "test_6_outlier_check": "PASS",
+    "test_7_8_quality_weights": "PASS",
+    "test_9_state_persistence": "PASS",
+    "test_10_history_audit": "PASS",
+    "test_11_prediction_impact": "PASS",
+    "test_12_sequential_convergence": "PASS",
+    "test_13_latency_breakdown": "PASS"
+  },
+  "mathematical_formula": "x_a = (1 - alpha)*x_b + alpha*y",
+  "quality_weights": {
+    "EXCELLENT": 0.85,
+    "GOOD": 0.75,
+    "ACCEPTABLE": 0.6,
+    "LOW_CONFIDENCE": 0.25,
+    "WARNING": 0.2,
+    "OUTLIER_REJECTED": 0.0
+  },
+  "validation_rules": [
+    "MISSING_VALUE_FILTER",
+    "PHYSICAL_BOUNDS_CHECK",
+    "STALENESS_EXPIRATION_24H",
+    "STATISTICAL_3.5_SIGMA_OUTLIER_FILTER",
+    "DUPLICATE_SIGNATURE_CACHE"
+  ],
+  "sample_demonstration": {
+    "baseline": {
+      "poondi_mcft": 2800.0,
+      "flood_prob": 0.09,
+      "risk_level": "LOW"
+    },
+    "assimilated_storm": {
+      "poondi_mcft": 3200.0,
+      "rainfall_mm": 180.0,
+      "flood_prob": 0.37,
+      "risk_level": "MODERATE"
+    },
+    "latency_assimilation_stage_ms": 0.3005000180564821
+  }
+}

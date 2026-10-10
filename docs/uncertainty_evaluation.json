@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "phase": 11,
+  "research_gap": "G5: Lack of quantified uncertainty in asset-level hazard prediction",
+  "methodology": {
+    "primary": "Ensemble Tree Dispersion (Epistemic Model Variance & Quantiles P05-P95)",
+    "secondary": "Split Conformal Prediction on Chronological Calibration Set (2017)",
+    "calibration_evaluation": "Sigmoid Platt Scaling vs Uncalibrated Brier Score"
+  },
+  "calibration_results": {
+    "brier_score_uncalibrated": 0.054609629803043895,
+    "brier_score_calibrated": 0.027531152423974685,
+    "brier_improvement_percent": 49.59
+  },
+  "coverage_metrics": {
+    "target_coverage": 0.9,
+    "empirical_coverage": 1.0,
+    "mean_interval_width": 0.7832,
+    "median_interval_width": 1.0
+  },
+  "horizon_uncertainty_comparison": {
+    "current": 0.840142152370718,
+    "15m": 0.7794242596562672,
+    "30m": 0.7794242596562672,
+    "60m": 0.7794242596562672
+  },
+  "epistemic_variance_by_horizon": {
+    "current": 0.13523781468952148,
+    "15m": 0.11447099235532678,
+    "30m": 0.11447099235532678,
+    "60m": 0.11447099235532678
+  },
+  "uncertainty_level_thresholds": {
+    "LOW": "< 0.20",
+    "MODERATE": "0.20 - 0.45",
+    "HIGH": ">= 0.45"
+  },
+  "temporal_splits": {
+    "train_period": "2015-11-01 to 2016-12-31",
+    "calibration_period": "2017-01-01 to 2017-12-31",
+    "holdout_test_period": "2018-01-01 to 2020-12-11"
+  }
+}

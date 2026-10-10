@@ -1,0 +1,84 @@
+{
+  "nodes": [
+    {
+      "id": "rainfall",
+      "name": "Extreme Rainfall",
+      "type": "Primary Meteorological Driver",
+      "source": "NASA IMERG"
+    },
+    {
+      "id": "reservoir",
+      "name": "Reservoir Hydrological Stress",
+      "type": "Catchment Retention State",
+      "source": "CMWSSB"
+    },
+    {
+      "id": "runoff",
+      "name": "Topographic Surface Pooling",
+      "type": "Drainage Accumulation",
+      "source": "Copernicus DEM"
+    },
+    {
+      "id": "wind",
+      "name": "High Wind / Cyclonic Gale",
+      "type": "Atmospheric Dynamic",
+      "source": "NOAA ISD"
+    },
+    {
+      "id": "heat",
+      "name": "Thermodynamic Heat Index",
+      "type": "Atmospheric Thermodynamic",
+      "source": "NOAA ISD"
+    },
+    {
+      "id": "flood",
+      "name": "Predictive Flood Inundation",
+      "type": "Predictive Hazard Target",
+      "source": "Random Forest"
+    }
+  ],
+  "edges": [
+    {
+      "source": "rainfall",
+      "target": "reservoir",
+      "relationship": "Direct Inflow Surge",
+      "weight": 0.85
+    },
+    {
+      "source": "rainfall",
+      "target": "runoff",
+      "relationship": "Surface Runoff Generation",
+      "weight": 0.8
+    },
+    {
+      "source": "reservoir",
+      "target": "flood",
+      "relationship": "Spillway Capacity Overtopping",
+      "weight": 0.9
+    },
+    {
+      "source": "runoff",
+      "target": "flood",
+      "relationship": "Low-Elevation Urban Pooling",
+      "weight": 0.75
+    },
+    {
+      "source": "rainfall",
+      "target": "flood",
+      "relationship": "Antecedent Saturation Deluge",
+      "weight": 0.95
+    },
+    {
+      "source": "wind",
+      "target": "flood",
+      "relationship": "Storm Drain Blockage & Estuary Tidal Backing",
+      "weight": 0.5
+    }
+  ],
+  "coupling_weights": {
+    "rainfall_x_reservoir": 0.25,
+    "rainfall_x_runoff": 0.15,
+    "rainfall_x_wind": 0.15,
+    "temp_x_dewpoint": 0.1
+  }
+}

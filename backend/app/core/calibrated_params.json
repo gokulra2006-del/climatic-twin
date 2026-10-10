@@ -1,0 +1,123 @@
+{
+  "metadata": {
+    "calibration_timestamp": "2026-10-03T16:56:25.957553+00:00",
+    "algorithm": "Non-Negative Constrained Linear Regression (NNLS / Bounded Least Squares)",
+    "train_period": "2015-11-01 to 2017-12-31 (792 days)",
+    "val_period": "2018-01-01 to 2020-12-11 (1076 days)",
+    "source_inventory": "IIT Delhi India Flood Inventory (IFI) + CMWSSB + IMERG + NOAA ISD",
+    "anti_leakage_enforced": true,
+    "status": "CALIBRATED_FIT_PRODUCTION"
+  },
+  "multihazard": {
+    "base_weights": {
+      "flood": 0.1389,
+      "rainfall": 0.7689,
+      "reservoir": 0.0513,
+      "wind": 0.0205,
+      "heat": 0.0103,
+      "runoff": 0.0103
+    },
+    "interaction_weights": {
+      "rainfall_x_reservoir": 0.45,
+      "rainfall_x_runoff": 0.3,
+      "rainfall_x_wind": 0.3,
+      "temp_x_dewpoint": 0.0381
+    },
+    "expert_fallback": {
+      "base_weights": {
+        "flood": 0.35,
+        "rainfall": 0.25,
+        "reservoir": 0.2,
+        "wind": 0.1,
+        "heat": 0.05,
+        "runoff": 0.05
+      },
+      "interaction_weights": {
+        "rainfall_x_reservoir": 0.25,
+        "rainfall_x_runoff": 0.15,
+        "rainfall_x_wind": 0.15,
+        "temp_x_dewpoint": 0.1
+      }
+    }
+  },
+  "decision_support": {
+    "dss_weights": {
+      "hazard_severity": 0.1134,
+      "asset_risk": 0.1134,
+      "compound_risk": 0.331,
+      "forecast_confidence": 0.0227,
+      "data_quality": 0.0227,
+      "persistence": 0.3968
+    },
+    "cascade_strengths": {
+      "cascade_reservoir": 0.12,
+      "cascade_deluge": 0.02
+    },
+    "decision_thresholds": {
+      "NORMAL": {
+        "min": 0.0,
+        "max": 0.13
+      },
+      "MONITOR": {
+        "min": 0.13,
+        "max": 0.24
+      },
+      "PREPARE": {
+        "min": 0.24,
+        "max": 0.35
+      },
+      "ALERT": {
+        "min": 0.35,
+        "max": 0.5
+      },
+      "EMERGENCY": {
+        "min": 0.5,
+        "max": 1.0
+      }
+    },
+    "expert_fallback": {
+      "dss_weights": {
+        "hazard_severity": 0.3,
+        "asset_risk": 0.2,
+        "compound_risk": 0.15,
+        "forecast_confidence": 0.15,
+        "data_quality": 0.1,
+        "persistence": 0.1
+      },
+      "cascade_strengths": {
+        "cascade_reservoir": 0.15,
+        "cascade_deluge": 0.1
+      },
+      "decision_thresholds": {
+        "NORMAL": {
+          "min": 0.0,
+          "max": 0.4
+        },
+        "MONITOR": {
+          "min": 0.4,
+          "max": 0.55
+        },
+        "PREPARE": {
+          "min": 0.55,
+          "max": 0.7
+        },
+        "ALERT": {
+          "min": 0.7,
+          "max": 0.85
+        },
+        "EMERGENCY": {
+          "min": 0.85,
+          "max": 1.0
+        }
+      }
+    }
+  },
+  "fit_quality": {
+    "crs_rmse_train": 0.1485,
+    "crs_rmse_val": 0.0857,
+    "dss_rmse_train": 0.1536,
+    "dss_rmse_val": 0.1025,
+    "dss_roc_auc_train": 0.9007,
+    "dss_roc_auc_val": 0.8568
+  }
+}

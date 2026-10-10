@@ -1,0 +1,13 @@
+\begin{tabular}{llllllllllll}
+\toprule
+Model & F1 & POD & FAR & MAE & RMSE & Opt_Threshold & TP & Miss (FN) & False_Alarms & Lead Time & Notes \\
+\midrule
+Persistence & 0.471 [0.414-0.519] & 0.783 [0.713-0.838] & 0.663 [0.617-0.712] & 0.714 & 0.903 & 0.850 & 137 & 38 & 270 & 24h & Measured \\
+Physics (Thresh) & 0.000 [0.000-0.000] & 0.000 [0.000-0.000] & 0.000 [0.000-0.000] & 0.088 & 0.293 & 0.500 & 0 & 175 & 0 & 24h & Measured \\
+Logistic Reg & 0.860 [0.828-0.900] & 0.891 [0.850-0.937] & 0.170 [0.114-0.220] & 0.062 & 0.187 & 0.850 & 156 & 19 & 32 & 24h & Measured \\
+Random Forest & 0.824 [0.785-0.867] & 0.880 [0.833-0.921] & 0.226 [0.175-0.280] & 0.059 & 0.164 & 0.600 & 154 & 21 & 45 & 24h & Measured \\
+XGBoost & 0.834 [0.788-0.866] & 0.874 [0.826-0.918] & 0.203 [0.149-0.261] & 0.034 & 0.162 & 0.600 & 153 & 22 & 39 & 24h & Measured \\
+LSTM & 0.851 [0.808-0.886] & 0.897 [0.846-0.943] & 0.191 [0.140-0.243] & 0.098 & 0.206 & 0.750 & 157 & 18 & 37 & 24h & Measured \\
+GNN (Spatial) & NaN & NaN & NaN & NaN & NaN & NaN & NaN & NaN & NaN & TARGET & Missing Spatial Telemetry \\
+\bottomrule
+\end{tabular}

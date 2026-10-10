@@ -1,0 +1,330 @@
+[
+  {
+    "asset_id": 5,
+    "code": "ADYAR_OUTFALL",
+    "name": "Adyar River Coastal Outfall & Estuary",
+    "asset_type": "DRAINAGE_OUTLET",
+    "coordinates": {
+      "lat": 13.01,
+      "lon": 80.278
+    },
+    "dem_elevation_m": 0.0,
+    "criticality": "CRITICAL",
+    "criticality_weight": 1.0,
+    "hazard_score": 0.867,
+    "exposure_score": 0.866,
+    "vulnerability_proxy": 0.93,
+    "asset_risk_index": 1.0,
+    "risk_level": "CRITICAL",
+    "forecast_risk": {
+      "current": 1.0,
+      "15m": 1.0,
+      "30m": 1.0,
+      "60m": 1.0
+    },
+    "flood_probability": 0.35,
+    "uncertainty_info": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "recommended_action": "IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT",
+    "explanation": "Asset risk CRITICAL (ARI: 1.00). Contributing factors: High spatial catchment exposure (87%), Low topographic elevation (0.0m), Critical systemic urban importance (CRITICAL), Active upstream reservoir discharge cascade. Action: IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT.",
+    "methodology_labels": {
+      "hazard": "OBSERVED / ASSIMILATED (Phase 9 & 13)",
+      "elevation": "DERIVED (Copernicus DEM 30m)",
+      "vulnerability": "TRANSPARENT PROXY (Unmeasured)",
+      "criticality": "RULE-BASED SYSTEMIC CLASS"
+    },
+    "priority_rank": 1
+  },
+  {
+    "asset_id": 8,
+    "code": "NAPIER_BRIDGE",
+    "name": "Napier Bridge & Coastal Arterial",
+    "asset_type": "TRANSPORT_CORRIDOR",
+    "coordinates": {
+      "lat": 13.0675,
+      "lon": 80.285
+    },
+    "dem_elevation_m": 5.1,
+    "criticality": "HIGH",
+    "criticality_weight": 0.75,
+    "hazard_score": 0.867,
+    "exposure_score": 0.799,
+    "vulnerability_proxy": 0.71,
+    "asset_risk_index": 0.898,
+    "risk_level": "CRITICAL",
+    "forecast_risk": {
+      "current": 0.898,
+      "15m": 0.916,
+      "30m": 0.952,
+      "60m": 1.0
+    },
+    "flood_probability": 0.35,
+    "uncertainty_info": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "recommended_action": "IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT",
+    "explanation": "Asset risk CRITICAL (ARI: 0.90). Contributing factors: High spatial catchment exposure (80%), Low topographic elevation (5.1m), Critical systemic urban importance (HIGH), Active upstream reservoir discharge cascade. Action: IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT.",
+    "methodology_labels": {
+      "hazard": "OBSERVED / ASSIMILATED (Phase 9 & 13)",
+      "elevation": "DERIVED (Copernicus DEM 30m)",
+      "vulnerability": "TRANSPARENT PROXY (Unmeasured)",
+      "criticality": "RULE-BASED SYSTEMIC CLASS"
+    },
+    "priority_rank": 2
+  },
+  {
+    "asset_id": 3,
+    "code": "REDHILLS",
+    "name": "Redhills Reservoir (Puzhal Lake)",
+    "asset_type": "RESERVOIR",
+    "coordinates": {
+      "lat": 13.165,
+      "lon": 80.1632
+    },
+    "dem_elevation_m": 16.3,
+    "criticality": "CRITICAL",
+    "criticality_weight": 1.0,
+    "hazard_score": 0.867,
+    "exposure_score": 0.862,
+    "vulnerability_proxy": 0.52,
+    "asset_risk_index": 0.816,
+    "risk_level": "CRITICAL",
+    "forecast_risk": {
+      "current": 0.816,
+      "15m": 0.832,
+      "30m": 0.865,
+      "60m": 0.914
+    },
+    "flood_probability": 0.35,
+    "uncertainty_info": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "recommended_action": "IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT",
+    "explanation": "Asset risk CRITICAL (ARI: 0.82). Contributing factors: High spatial catchment exposure (86%), Critical systemic urban importance (CRITICAL). Action: IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT.",
+    "methodology_labels": {
+      "hazard": "OBSERVED / ASSIMILATED (Phase 9 & 13)",
+      "elevation": "DERIVED (Copernicus DEM 30m)",
+      "vulnerability": "TRANSPARENT PROXY (Unmeasured)",
+      "criticality": "RULE-BASED SYSTEMIC CLASS"
+    },
+    "priority_rank": 3
+  },
+  {
+    "asset_id": 4,
+    "code": "CHEMBARAMBAKKAM",
+    "name": "Chembarambakkam Reservoir",
+    "asset_type": "RESERVOIR",
+    "coordinates": {
+      "lat": 13.0116,
+      "lon": 80.0606
+    },
+    "dem_elevation_m": 21.0,
+    "criticality": "CRITICAL",
+    "criticality_weight": 1.0,
+    "hazard_score": 0.867,
+    "exposure_score": 0.862,
+    "vulnerability_proxy": 0.4,
+    "asset_risk_index": 0.792,
+    "risk_level": "CRITICAL",
+    "forecast_risk": {
+      "current": 0.792,
+      "15m": 0.808,
+      "30m": 0.84,
+      "60m": 0.887
+    },
+    "flood_probability": 0.35,
+    "uncertainty_info": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "recommended_action": "IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT",
+    "explanation": "Asset risk CRITICAL (ARI: 0.79). Contributing factors: High spatial catchment exposure (86%), Critical systemic urban importance (CRITICAL). Action: IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT.",
+    "methodology_labels": {
+      "hazard": "OBSERVED / ASSIMILATED (Phase 9 & 13)",
+      "elevation": "DERIVED (Copernicus DEM 30m)",
+      "vulnerability": "TRANSPARENT PROXY (Unmeasured)",
+      "criticality": "RULE-BASED SYSTEMIC CLASS"
+    },
+    "priority_rank": 4
+  },
+  {
+    "asset_id": 7,
+    "code": "CENTRAL_SUBSTATION",
+    "name": "Chennai Central Power Substation (230 kV)",
+    "asset_type": "POWER_GRID",
+    "coordinates": {
+      "lat": 13.083,
+      "lon": 80.27
+    },
+    "dem_elevation_m": 10.6,
+    "criticality": "CRITICAL",
+    "criticality_weight": 1.0,
+    "hazard_score": 0.867,
+    "exposure_score": 0.726,
+    "vulnerability_proxy": 0.54,
+    "asset_risk_index": 0.779,
+    "risk_level": "CRITICAL",
+    "forecast_risk": {
+      "current": 0.779,
+      "15m": 0.795,
+      "30m": 0.826,
+      "60m": 0.873
+    },
+    "flood_probability": 0.35,
+    "uncertainty_info": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "recommended_action": "IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT",
+    "explanation": "Asset risk CRITICAL (ARI: 0.78). Contributing factors: High spatial catchment exposure (73%), Critical systemic urban importance (CRITICAL). Action: IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT.",
+    "methodology_labels": {
+      "hazard": "OBSERVED / ASSIMILATED (Phase 9 & 13)",
+      "elevation": "DERIVED (Copernicus DEM 30m)",
+      "vulnerability": "TRANSPARENT PROXY (Unmeasured)",
+      "criticality": "RULE-BASED SYSTEMIC CLASS"
+    },
+    "priority_rank": 5
+  },
+  {
+    "asset_id": 1,
+    "code": "POONDI",
+    "name": "Poondi Reservoir (Sathyamoorthy Sagar)",
+    "asset_type": "RESERVOIR",
+    "coordinates": {
+      "lat": 13.185,
+      "lon": 79.86
+    },
+    "dem_elevation_m": 40.5,
+    "criticality": "HIGH",
+    "criticality_weight": 0.75,
+    "hazard_score": 0.867,
+    "exposure_score": 0.862,
+    "vulnerability_proxy": 0.4,
+    "asset_risk_index": 0.754,
+    "risk_level": "CRITICAL",
+    "forecast_risk": {
+      "current": 0.754,
+      "15m": 0.77,
+      "30m": 0.8,
+      "60m": 0.845
+    },
+    "flood_probability": 0.35,
+    "uncertainty_info": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "recommended_action": "IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT",
+    "explanation": "Asset risk CRITICAL (ARI: 0.75). Contributing factors: High spatial catchment exposure (86%), Critical systemic urban importance (HIGH). Action: IMMEDIATE EMERGENCY INSPECTION & SPILLWAY / PUMP DEPLOYMENT.",
+    "methodology_labels": {
+      "hazard": "OBSERVED / ASSIMILATED (Phase 9 & 13)",
+      "elevation": "DERIVED (Copernicus DEM 30m)",
+      "vulnerability": "TRANSPARENT PROXY (Unmeasured)",
+      "criticality": "RULE-BASED SYSTEMIC CLASS"
+    },
+    "priority_rank": 6
+  },
+  {
+    "asset_id": 2,
+    "code": "CHOLAVARAM",
+    "name": "Cholavaram Reservoir",
+    "asset_type": "RESERVOIR",
+    "coordinates": {
+      "lat": 13.2353,
+      "lon": 80.1636
+    },
+    "dem_elevation_m": 18.6,
+    "criticality": "MODERATE",
+    "criticality_weight": 0.5,
+    "hazard_score": 0.867,
+    "exposure_score": 0.862,
+    "vulnerability_proxy": 0.52,
+    "asset_risk_index": 0.741,
+    "risk_level": "HIGH",
+    "forecast_risk": {
+      "current": 0.741,
+      "15m": 0.756,
+      "30m": 0.785,
+      "60m": 0.83
+    },
+    "flood_probability": 0.35,
+    "uncertainty_info": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "recommended_action": "PRIORITIZE SENSOR MONITORING & DISPATCH PREPAREDNESS",
+    "explanation": "Asset risk HIGH (ARI: 0.74). Contributing factors: High spatial catchment exposure (86%). Action: PRIORITIZE SENSOR MONITORING & DISPATCH PREPAREDNESS.",
+    "methodology_labels": {
+      "hazard": "OBSERVED / ASSIMILATED (Phase 9 & 13)",
+      "elevation": "DERIVED (Copernicus DEM 30m)",
+      "vulnerability": "TRANSPARENT PROXY (Unmeasured)",
+      "criticality": "RULE-BASED SYSTEMIC CLASS"
+    },
+    "priority_rank": 7
+  },
+  {
+    "asset_id": 6,
+    "code": "KILPAUK_WTP",
+    "name": "Kilpauk Water Treatment Plant",
+    "asset_type": "WATER_TREATMENT",
+    "coordinates": {
+      "lat": 13.08,
+      "lon": 80.24
+    },
+    "dem_elevation_m": 11.0,
+    "criticality": "HIGH",
+    "criticality_weight": 0.75,
+    "hazard_score": 0.867,
+    "exposure_score": 0.721,
+    "vulnerability_proxy": 0.48,
+    "asset_risk_index": 0.728,
+    "risk_level": "HIGH",
+    "forecast_risk": {
+      "current": 0.728,
+      "15m": 0.743,
+      "30m": 0.772,
+      "60m": 0.815
+    },
+    "flood_probability": 0.35,
+    "uncertainty_info": {
+      "uncertainty_level": "LOW",
+      "prediction_interval": {
+        "lower": 0.0,
+        "upper": 0.2
+      }
+    },
+    "recommended_action": "PRIORITIZE SENSOR MONITORING & DISPATCH PREPAREDNESS",
+    "explanation": "Asset risk HIGH (ARI: 0.73). Contributing factors: High spatial catchment exposure (72%), Critical systemic urban importance (HIGH). Action: PRIORITIZE SENSOR MONITORING & DISPATCH PREPAREDNESS.",
+    "methodology_labels": {
+      "hazard": "OBSERVED / ASSIMILATED (Phase 9 & 13)",
+      "elevation": "DERIVED (Copernicus DEM 30m)",
+      "vulnerability": "TRANSPARENT PROXY (Unmeasured)",
+      "criticality": "RULE-BASED SYSTEMIC CLASS"
+    },
+    "priority_rank": 8
+  }
+]

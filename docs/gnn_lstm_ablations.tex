@@ -1,0 +1,14 @@
+\begin{table}
+\caption{GNN-LSTM Multi-Relational Ablations with Quantile Constraints}
+\begin{tabular}{lrrr}
+\toprule
+Ablation & Quantile Loss & P50 RMSE & Constraint Violations \\
+\midrule
+1. LSTM Only (No Spatial) & 0.263100 & 0.390384 & 0 \\
+2. GNN Only (No Temporal) & 0.751112 & 0.970814 & 0 \\
+3. Single Merged Graph & 0.775323 & 0.987439 & 0 \\
+4. GNN-LSTM (No Assimilation) & 0.778383 & 0.999994 & 0 \\
+5. FULL MODEL (Typed + Assimilated) & 0.769857 & 0.978499 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}

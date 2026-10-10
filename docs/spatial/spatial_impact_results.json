@@ -1,0 +1,381 @@
+[
+  {
+    "zone_id": "ZONE_NORTH_INDUSTRIAL_MANALI",
+    "name": "North Chennai Industrial & Ennore Littoral",
+    "catchment": "Buckingham Canal North Catchment",
+    "bounds": {
+      "min_lat": 13.15,
+      "max_lat": 13.28,
+      "min_lon": 80.24,
+      "max_lon": 80.34
+    },
+    "center": {
+      "lat": 13.2,
+      "lon": 80.29
+    },
+    "dem_elevation_m": 0.5,
+    "drainage_outlet": "Ennore Estuary",
+    "urban_density_class": "HIGH",
+    "critical_assets": [
+      "CHOLAVARAM"
+    ],
+    "terrain_susceptibility": 0.98,
+    "flood_susceptibility_index": 0.871,
+    "spatial_flood_impact_index": 0.68,
+    "relative_severity_class": "HIGH",
+    "depth_estimation_status": "NOT DIRECTLY OBSERVED (Relative Susceptibility Proxy)",
+    "prediction_interval": {
+      "lower": 0.56,
+      "upper": 0.83,
+      "coverage": "90%"
+    },
+    "uncertainty_level": "MODERATE",
+    "forecast_progression": {
+      "current": 0.68,
+      "15m": 0.707,
+      "30m": 0.734,
+      "60m": 0.782
+    },
+    "data_provenance": {
+      "elevation_source": "Copernicus DEM GLO-30 (30m)",
+      "rainfall_source": "NASA GPM IMERG V07B (0.1 deg)",
+      "runoff_source": "ERA5-Land Reanalysis",
+      "flood_probability_source": "Random Forest ML Classifier (Phase 10)",
+      "classification_type": "DERIVED_SUSCEPTIBILITY_INDEX"
+    },
+    "causal_explanation": "Elevated SFII (0.68) driven by 0.5m DEM elevation depression in Buckingham Canal North Catchment, combined with 90.0mm rainfall accumulation.",
+    "priority_zone_rank": 1
+  },
+  {
+    "zone_id": "ZONE_ADYAR_ESTUARY",
+    "name": "Coastal Adyar Estuary & Lowland Plain",
+    "catchment": "Adyar River Basin",
+    "bounds": {
+      "min_lat": 12.98,
+      "max_lat": 13.04,
+      "min_lon": 80.2,
+      "max_lon": 80.29
+    },
+    "center": {
+      "lat": 13.01,
+      "lon": 80.25
+    },
+    "dem_elevation_m": 14.6,
+    "drainage_outlet": "Bay of Bengal (Adyar Mouth)",
+    "urban_density_class": "HIGH",
+    "critical_assets": [
+      "ADYAR_OUTFALL",
+      "NAPIER_BRIDGE"
+    ],
+    "terrain_susceptibility": 0.658,
+    "flood_susceptibility_index": 0.797,
+    "spatial_flood_impact_index": 0.669,
+    "relative_severity_class": "HIGH",
+    "depth_estimation_status": "NOT DIRECTLY OBSERVED (Relative Susceptibility Proxy)",
+    "prediction_interval": {
+      "lower": 0.549,
+      "upper": 0.819,
+      "coverage": "90%"
+    },
+    "uncertainty_level": "MODERATE",
+    "forecast_progression": {
+      "current": 0.669,
+      "15m": 0.696,
+      "30m": 0.723,
+      "60m": 0.769
+    },
+    "data_provenance": {
+      "elevation_source": "Copernicus DEM GLO-30 (30m)",
+      "rainfall_source": "NASA GPM IMERG V07B (0.1 deg)",
+      "runoff_source": "ERA5-Land Reanalysis",
+      "flood_probability_source": "Random Forest ML Classifier (Phase 10)",
+      "classification_type": "DERIVED_SUSCEPTIBILITY_INDEX"
+    },
+    "causal_explanation": "Elevated SFII (0.67) driven by 14.6m DEM elevation depression in Adyar River Basin, combined with 90.0mm rainfall accumulation.",
+    "priority_zone_rank": 2
+  },
+  {
+    "zone_id": "ZONE_COOUM_CORRIDOR",
+    "name": "Central Cooum River Urban Basin",
+    "catchment": "Cooum River Basin",
+    "bounds": {
+      "min_lat": 13.05,
+      "max_lat": 13.1,
+      "min_lon": 80.18,
+      "max_lon": 80.29
+    },
+    "center": {
+      "lat": 13.075,
+      "lon": 80.245
+    },
+    "dem_elevation_m": 8.3,
+    "drainage_outlet": "Bay of Bengal (Cooum Mouth)",
+    "urban_density_class": "CRITICAL",
+    "critical_assets": [
+      "CENTRAL_SUBSTATION",
+      "KILPAUK_WTP"
+    ],
+    "terrain_susceptibility": 0.779,
+    "flood_susceptibility_index": 0.811,
+    "spatial_flood_impact_index": 0.659,
+    "relative_severity_class": "HIGH",
+    "depth_estimation_status": "NOT DIRECTLY OBSERVED (Relative Susceptibility Proxy)",
+    "prediction_interval": {
+      "lower": 0.539,
+      "upper": 0.809,
+      "coverage": "90%"
+    },
+    "uncertainty_level": "MODERATE",
+    "forecast_progression": {
+      "current": 0.659,
+      "15m": 0.685,
+      "30m": 0.712,
+      "60m": 0.758
+    },
+    "data_provenance": {
+      "elevation_source": "Copernicus DEM GLO-30 (30m)",
+      "rainfall_source": "NASA GPM IMERG V07B (0.1 deg)",
+      "runoff_source": "ERA5-Land Reanalysis",
+      "flood_probability_source": "Random Forest ML Classifier (Phase 10)",
+      "classification_type": "DERIVED_SUSCEPTIBILITY_INDEX"
+    },
+    "causal_explanation": "Elevated SFII (0.66) driven by 8.3m DEM elevation depression in Cooum River Basin, combined with 90.0mm rainfall accumulation.",
+    "priority_zone_rank": 3
+  },
+  {
+    "zone_id": "ZONE_SOUTH_COASTAL_VELACHERY",
+    "name": "South Chennai Pallikaranai & Velachery Basin",
+    "catchment": "Pallikaranai Marshland Catchment",
+    "bounds": {
+      "min_lat": 12.92,
+      "max_lat": 12.99,
+      "min_lon": 80.18,
+      "max_lon": 80.26
+    },
+    "center": {
+      "lat": 12.96,
+      "lon": 80.22
+    },
+    "dem_elevation_m": 5.3,
+    "drainage_outlet": "Buckingham Canal & Kovalam Estuary",
+    "urban_density_class": "CRITICAL",
+    "critical_assets": [
+      "ADYAR_OUTFALL"
+    ],
+    "terrain_susceptibility": 0.595,
+    "flood_susceptibility_index": 0.793,
+    "spatial_flood_impact_index": 0.653,
+    "relative_severity_class": "HIGH",
+    "depth_estimation_status": "NOT DIRECTLY OBSERVED (Relative Susceptibility Proxy)",
+    "prediction_interval": {
+      "lower": 0.533,
+      "upper": 0.803,
+      "coverage": "90%"
+    },
+    "uncertainty_level": "MODERATE",
+    "forecast_progression": {
+      "current": 0.653,
+      "15m": 0.679,
+      "30m": 0.705,
+      "60m": 0.751
+    },
+    "data_provenance": {
+      "elevation_source": "Copernicus DEM GLO-30 (30m)",
+      "rainfall_source": "NASA GPM IMERG V07B (0.1 deg)",
+      "runoff_source": "ERA5-Land Reanalysis",
+      "flood_probability_source": "Random Forest ML Classifier (Phase 10)",
+      "classification_type": "DERIVED_SUSCEPTIBILITY_INDEX"
+    },
+    "causal_explanation": "Elevated SFII (0.65) driven by 5.3m DEM elevation depression in Pallikaranai Marshland Catchment, combined with 90.0mm rainfall accumulation.",
+    "priority_zone_rank": 4
+  },
+  {
+    "zone_id": "ZONE_CHEMBARAMBAKKAM_UPSTREAM",
+    "name": "Western Chembarambakkam Reservoir Headwaters",
+    "catchment": "Adyar Upper Catchment",
+    "bounds": {
+      "min_lat": 12.96,
+      "max_lat": 13.06,
+      "min_lon": 79.98,
+      "max_lon": 80.12
+    },
+    "center": {
+      "lat": 13.0116,
+      "lon": 80.05
+    },
+    "dem_elevation_m": 21.0,
+    "drainage_outlet": "Adyar Spillway Channel",
+    "urban_density_class": "MODERATE",
+    "critical_assets": [
+      "CHEMBARAMBAKKAM"
+    ],
+    "terrain_susceptibility": 0.423,
+    "flood_susceptibility_index": 0.712,
+    "spatial_flood_impact_index": 0.624,
+    "relative_severity_class": "HIGH",
+    "depth_estimation_status": "NOT DIRECTLY OBSERVED (Relative Susceptibility Proxy)",
+    "prediction_interval": {
+      "lower": 0.504,
+      "upper": 0.774,
+      "coverage": "90%"
+    },
+    "uncertainty_level": "MODERATE",
+    "forecast_progression": {
+      "current": 0.624,
+      "15m": 0.649,
+      "30m": 0.674,
+      "60m": 0.718
+    },
+    "data_provenance": {
+      "elevation_source": "Copernicus DEM GLO-30 (30m)",
+      "rainfall_source": "NASA GPM IMERG V07B (0.1 deg)",
+      "runoff_source": "ERA5-Land Reanalysis",
+      "flood_probability_source": "Random Forest ML Classifier (Phase 10)",
+      "classification_type": "DERIVED_SUSCEPTIBILITY_INDEX"
+    },
+    "causal_explanation": "Elevated SFII (0.62) driven by 21.0m DEM elevation depression in Adyar Upper Catchment, combined with 90.0mm rainfall accumulation.",
+    "priority_zone_rank": 5
+  },
+  {
+    "zone_id": "ZONE_KOSASTHALAIYAR_NORTH",
+    "name": "Northern Kosasthalaiyar & Puzhal Basin",
+    "catchment": "Kosasthalaiyar River Basin",
+    "bounds": {
+      "min_lat": 13.12,
+      "max_lat": 13.25,
+      "min_lon": 80.1,
+      "max_lon": 80.25
+    },
+    "center": {
+      "lat": 13.18,
+      "lon": 80.17
+    },
+    "dem_elevation_m": 13.0,
+    "drainage_outlet": "Ennore Creek",
+    "urban_density_class": "MODERATE",
+    "critical_assets": [
+      "REDHILLS",
+      "CHOLAVARAM"
+    ],
+    "terrain_susceptibility": 0.522,
+    "flood_susceptibility_index": 0.697,
+    "spatial_flood_impact_index": 0.619,
+    "relative_severity_class": "HIGH",
+    "depth_estimation_status": "NOT DIRECTLY OBSERVED (Relative Susceptibility Proxy)",
+    "prediction_interval": {
+      "lower": 0.499,
+      "upper": 0.769,
+      "coverage": "90%"
+    },
+    "uncertainty_level": "MODERATE",
+    "forecast_progression": {
+      "current": 0.619,
+      "15m": 0.644,
+      "30m": 0.669,
+      "60m": 0.712
+    },
+    "data_provenance": {
+      "elevation_source": "Copernicus DEM GLO-30 (30m)",
+      "rainfall_source": "NASA GPM IMERG V07B (0.1 deg)",
+      "runoff_source": "ERA5-Land Reanalysis",
+      "flood_probability_source": "Random Forest ML Classifier (Phase 10)",
+      "classification_type": "DERIVED_SUSCEPTIBILITY_INDEX"
+    },
+    "causal_explanation": "Elevated SFII (0.62) driven by 13.0m DEM elevation depression in Kosasthalaiyar River Basin, combined with 90.0mm rainfall accumulation.",
+    "priority_zone_rank": 6
+  },
+  {
+    "zone_id": "ZONE_POONDI_UPLANDS",
+    "name": "Northwestern Poondi Headwaters & Uplands",
+    "catchment": "Kosasthalaiyar Headwaters",
+    "bounds": {
+      "min_lat": 13.14,
+      "max_lat": 13.26,
+      "min_lon": 79.8,
+      "max_lon": 79.95
+    },
+    "center": {
+      "lat": 13.185,
+      "lon": 79.86
+    },
+    "dem_elevation_m": 40.5,
+    "drainage_outlet": "Kosasthalaiyar River",
+    "urban_density_class": "LOW",
+    "critical_assets": [
+      "POONDI"
+    ],
+    "terrain_susceptibility": 0.284,
+    "flood_susceptibility_index": 0.588,
+    "spatial_flood_impact_index": 0.581,
+    "relative_severity_class": "HIGH",
+    "depth_estimation_status": "NOT DIRECTLY OBSERVED (Relative Susceptibility Proxy)",
+    "prediction_interval": {
+      "lower": 0.461,
+      "upper": 0.731,
+      "coverage": "90%"
+    },
+    "uncertainty_level": "MODERATE",
+    "forecast_progression": {
+      "current": 0.581,
+      "15m": 0.604,
+      "30m": 0.627,
+      "60m": 0.668
+    },
+    "data_provenance": {
+      "elevation_source": "Copernicus DEM GLO-30 (30m)",
+      "rainfall_source": "NASA GPM IMERG V07B (0.1 deg)",
+      "runoff_source": "ERA5-Land Reanalysis",
+      "flood_probability_source": "Random Forest ML Classifier (Phase 10)",
+      "classification_type": "DERIVED_SUSCEPTIBILITY_INDEX"
+    },
+    "causal_explanation": "Elevated SFII (0.58) driven by 40.5m DEM elevation depression in Kosasthalaiyar Headwaters, combined with 90.0mm rainfall accumulation.",
+    "priority_zone_rank": 7
+  },
+  {
+    "zone_id": "ZONE_SOUTHWEST_TAMBARAM",
+    "name": "Southwestern Tambaram & Guindy Urban Foothills",
+    "catchment": "Adyar Middle Tributaries",
+    "bounds": {
+      "min_lat": 12.9,
+      "max_lat": 12.98,
+      "min_lon": 80.08,
+      "max_lon": 80.18
+    },
+    "center": {
+      "lat": 12.94,
+      "lon": 80.13
+    },
+    "dem_elevation_m": 28.9,
+    "drainage_outlet": "Adyar Middle Reach",
+    "urban_density_class": "HIGH",
+    "critical_assets": [
+      "CHEMBARAMBAKKAM"
+    ],
+    "terrain_susceptibility": 0.044,
+    "flood_susceptibility_index": 0.553,
+    "spatial_flood_impact_index": 0.569,
+    "relative_severity_class": "HIGH",
+    "depth_estimation_status": "NOT DIRECTLY OBSERVED (Relative Susceptibility Proxy)",
+    "prediction_interval": {
+      "lower": 0.449,
+      "upper": 0.719,
+      "coverage": "90%"
+    },
+    "uncertainty_level": "MODERATE",
+    "forecast_progression": {
+      "current": 0.569,
+      "15m": 0.592,
+      "30m": 0.615,
+      "60m": 0.654
+    },
+    "data_provenance": {
+      "elevation_source": "Copernicus DEM GLO-30 (30m)",
+      "rainfall_source": "NASA GPM IMERG V07B (0.1 deg)",
+      "runoff_source": "ERA5-Land Reanalysis",
+      "flood_probability_source": "Random Forest ML Classifier (Phase 10)",
+      "classification_type": "DERIVED_SUSCEPTIBILITY_INDEX"
+    },
+    "causal_explanation": "Elevated SFII (0.57) driven by 28.9m DEM elevation depression in Adyar Middle Tributaries, combined with 90.0mm rainfall accumulation.",
+    "priority_zone_rank": 8
+  }
+]

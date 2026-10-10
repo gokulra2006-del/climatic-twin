@@ -1,0 +1,297 @@
+{
+  "status": "success",
+  "city_wide_telemetry_health": "EXCELLENT",
+  "aggregate_health_score": 0.977,
+  "source_counts": {
+    "total_sources": 8,
+    "healthy": 8,
+    "degraded": 0,
+    "stale": 0,
+    "anomalous": 0,
+    "missing_or_offline": 0
+  },
+  "sources": [
+    {
+      "source_id": "NOAA_ISD_432790",
+      "name": "NOAA ISD Surface Weather Station (Chennai Airport / 432790)",
+      "source_type": "OBSERVED",
+      "primary_variable": "temperature",
+      "latest_value": 31.2,
+      "unit": "\u00b0C",
+      "data_age_minutes": 12.0,
+      "expected_interval_minutes": 60,
+      "health_state": "HEALTHY",
+      "quality_tier": "EXCELLENT",
+      "sensor_health_score": 0.974,
+      "source_reliability_score": 0.974,
+      "completeness_ratio": 0.96,
+      "physical_plausibility": {
+        "is_valid": true,
+        "message": "Physically plausible"
+      },
+      "temporal_anomaly": {
+        "is_anomalous": false
+      },
+      "stuck_sensor": {
+        "is_stuck": false
+      },
+      "diagnostic_reasons": [
+        "Nominal operational telemetry health"
+      ],
+      "last_verified_timestamp": "2026-09-02T10:14:51.876496+00:00",
+      "data_provenance": {
+        "classification": "OBSERVED",
+        "validation_pipeline": "Phase 16 Quality Intelligence"
+      }
+    },
+    {
+      "source_id": "NASA_IMERG_CHENNAI",
+      "name": "NASA GPM IMERG Precipitation (V07B 0.1\u00b0 Grid)",
+      "source_type": "SATELLITE_DERIVED",
+      "primary_variable": "rainfall",
+      "latest_value": 45.0,
+      "unit": "mm/day",
+      "data_age_minutes": 12.0,
+      "expected_interval_minutes": 30,
+      "health_state": "HEALTHY",
+      "quality_tier": "EXCELLENT",
+      "sensor_health_score": 0.967,
+      "source_reliability_score": 0.967,
+      "completeness_ratio": 0.96,
+      "physical_plausibility": {
+        "is_valid": true,
+        "message": "Physically plausible"
+      },
+      "temporal_anomaly": {
+        "is_anomalous": false
+      },
+      "stuck_sensor": {
+        "is_stuck": false
+      },
+      "diagnostic_reasons": [
+        "Nominal operational telemetry health"
+      ],
+      "last_verified_timestamp": "2026-09-02T10:14:51.876496+00:00",
+      "data_provenance": {
+        "classification": "SATELLITE_DERIVED",
+        "validation_pipeline": "Phase 16 Quality Intelligence"
+      }
+    },
+    {
+      "source_id": "CMWSSB_POONDI",
+      "name": "CMWSSB Poondi Reservoir Headworks Gauge",
+      "source_type": "OBSERVED",
+      "primary_variable": "water_level_POONDI",
+      "latest_value": 2820.0,
+      "unit": "mcft",
+      "data_age_minutes": 12.0,
+      "expected_interval_minutes": 720,
+      "health_state": "HEALTHY",
+      "quality_tier": "EXCELLENT",
+      "sensor_health_score": 0.988,
+      "source_reliability_score": 0.988,
+      "completeness_ratio": 0.96,
+      "physical_plausibility": {
+        "is_valid": true,
+        "message": "Physically plausible"
+      },
+      "temporal_anomaly": {
+        "is_anomalous": false
+      },
+      "stuck_sensor": {
+        "is_stuck": false
+      },
+      "diagnostic_reasons": [
+        "Nominal operational telemetry health"
+      ],
+      "last_verified_timestamp": "2026-09-02T10:14:51.876496+00:00",
+      "data_provenance": {
+        "classification": "OBSERVED",
+        "validation_pipeline": "Phase 16 Quality Intelligence"
+      }
+    },
+    {
+      "source_id": "CMWSSB_REDHILLS",
+      "name": "CMWSSB Redhills (Puzhal Lake) Intake Gauge",
+      "source_type": "OBSERVED",
+      "primary_variable": "water_level_REDHILLS",
+      "latest_value": 2910.0,
+      "unit": "mcft",
+      "data_age_minutes": 12.0,
+      "expected_interval_minutes": 720,
+      "health_state": "HEALTHY",
+      "quality_tier": "EXCELLENT",
+      "sensor_health_score": 0.988,
+      "source_reliability_score": 0.988,
+      "completeness_ratio": 0.96,
+      "physical_plausibility": {
+        "is_valid": true,
+        "message": "Physically plausible"
+      },
+      "temporal_anomaly": {
+        "is_anomalous": false
+      },
+      "stuck_sensor": {
+        "is_stuck": false
+      },
+      "diagnostic_reasons": [
+        "Nominal operational telemetry health"
+      ],
+      "last_verified_timestamp": "2026-09-02T10:14:51.876496+00:00",
+      "data_provenance": {
+        "classification": "OBSERVED",
+        "validation_pipeline": "Phase 16 Quality Intelligence"
+      }
+    },
+    {
+      "source_id": "CMWSSB_CHEMBARAMBAKKAM",
+      "name": "CMWSSB Chembarambakkam Reservoir Spillway Gauge",
+      "source_type": "OBSERVED",
+      "primary_variable": "water_level_CHEMBARAMBAKKAM",
+      "latest_value": 3120.0,
+      "unit": "mcft",
+      "data_age_minutes": 12.0,
+      "expected_interval_minutes": 720,
+      "health_state": "HEALTHY",
+      "quality_tier": "EXCELLENT",
+      "sensor_health_score": 0.988,
+      "source_reliability_score": 0.988,
+      "completeness_ratio": 0.96,
+      "physical_plausibility": {
+        "is_valid": true,
+        "message": "Physically plausible"
+      },
+      "temporal_anomaly": {
+        "is_anomalous": false
+      },
+      "stuck_sensor": {
+        "is_stuck": false
+      },
+      "diagnostic_reasons": [
+        "Nominal operational telemetry health"
+      ],
+      "last_verified_timestamp": "2026-09-02T10:14:51.876496+00:00",
+      "data_provenance": {
+        "classification": "OBSERVED",
+        "validation_pipeline": "Phase 16 Quality Intelligence"
+      }
+    },
+    {
+      "source_id": "CMWSSB_CHOLAVARAM",
+      "name": "CMWSSB Cholavaram Reservoir Gauge",
+      "source_type": "OBSERVED",
+      "primary_variable": "water_level_CHOLAVARAM",
+      "latest_value": 820.0,
+      "unit": "mcft",
+      "data_age_minutes": 12.0,
+      "expected_interval_minutes": 720,
+      "health_state": "HEALTHY",
+      "quality_tier": "EXCELLENT",
+      "sensor_health_score": 0.988,
+      "source_reliability_score": 0.988,
+      "completeness_ratio": 0.96,
+      "physical_plausibility": {
+        "is_valid": true,
+        "message": "Physically plausible"
+      },
+      "temporal_anomaly": {
+        "is_anomalous": false
+      },
+      "stuck_sensor": {
+        "is_stuck": false
+      },
+      "diagnostic_reasons": [
+        "Nominal operational telemetry health"
+      ],
+      "last_verified_timestamp": "2026-09-02T10:14:51.876496+00:00",
+      "data_provenance": {
+        "classification": "OBSERVED",
+        "validation_pipeline": "Phase 16 Quality Intelligence"
+      }
+    },
+    {
+      "source_id": "ERA5_LAND_REANALYSIS",
+      "name": "ECMWF ERA5-Land Hydrometeorological Reanalysis",
+      "source_type": "REANALYSIS_DERIVED",
+      "primary_variable": "runoff",
+      "latest_value": 0.35,
+      "unit": "Normalized",
+      "data_age_minutes": 12.0,
+      "expected_interval_minutes": 60,
+      "health_state": "HEALTHY",
+      "quality_tier": "EXCELLENT",
+      "sensor_health_score": 0.982,
+      "source_reliability_score": 0.982,
+      "completeness_ratio": 0.96,
+      "physical_plausibility": {
+        "is_valid": true,
+        "message": "Physically plausible"
+      },
+      "temporal_anomaly": {
+        "is_anomalous": false
+      },
+      "stuck_sensor": {
+        "is_stuck": false
+      },
+      "diagnostic_reasons": [
+        "Nominal operational telemetry health"
+      ],
+      "last_verified_timestamp": "2026-09-02T10:14:51.876496+00:00",
+      "data_provenance": {
+        "classification": "REANALYSIS_DERIVED",
+        "validation_pipeline": "Phase 16 Quality Intelligence"
+      }
+    },
+    {
+      "source_id": "IMD_CHENNAI_RADAR",
+      "name": "IMD Chennai Doppler Weather Radar (DWR Coastal Echo)",
+      "source_type": "OBSERVED_REMOTE",
+      "primary_variable": "rainfall",
+      "latest_value": 42.0,
+      "unit": "mm/day",
+      "data_age_minutes": 12.0,
+      "expected_interval_minutes": 15,
+      "health_state": "HEALTHY",
+      "quality_tier": "EXCELLENT",
+      "sensor_health_score": 0.943,
+      "source_reliability_score": 0.943,
+      "completeness_ratio": 0.96,
+      "physical_plausibility": {
+        "is_valid": true,
+        "message": "Physically plausible"
+      },
+      "temporal_anomaly": {
+        "is_anomalous": false
+      },
+      "stuck_sensor": {
+        "is_stuck": false
+      },
+      "diagnostic_reasons": [
+        "Nominal operational telemetry health"
+      ],
+      "last_verified_timestamp": "2026-09-02T10:14:51.876496+00:00",
+      "data_provenance": {
+        "classification": "OBSERVED_REMOTE",
+        "validation_pipeline": "Phase 16 Quality Intelligence"
+      }
+    }
+  ],
+  "cross_source_consistency": {
+    "temperature_check": {
+      "source_a": "NOAA_ISD_432790 (31.2\u00b0C)",
+      "source_b": "ERA5_LAND_REANALYSIS (30.8\u00b0C)",
+      "difference": 0.4,
+      "agreement_status": "EXCELLENT",
+      "consistency_score": 0.919
+    },
+    "rainfall_check": {
+      "source_a": "NASA_IMERG_CHENNAI (45.0mm)",
+      "source_b": "IMD_CHENNAI_RADAR (42.0mm)",
+      "difference": 3.02,
+      "agreement_status": "EXCELLENT",
+      "consistency_score": 0.94
+    }
+  },
+  "active_simulated_failures": {},
+  "quality_guidance": "Telemetry stream reliability is nominal. All predictions operate under high input confidence."
+}

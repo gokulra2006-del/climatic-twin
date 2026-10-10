@@ -1,0 +1,42 @@
+{
+  "ZONE_NORTH_INDUSTRIAL_MANALI": {
+    "name": "North Chennai Industrial & Ennore Littoral",
+    "flood_susceptibility_index": 0.871,
+    "historical_vulnerability": "HIGH"
+  },
+  "ZONE_ADYAR_ESTUARY": {
+    "name": "Coastal Adyar Estuary & Lowland Plain",
+    "flood_susceptibility_index": 0.797,
+    "historical_vulnerability": "VERY_HIGH"
+  },
+  "ZONE_COOUM_CORRIDOR": {
+    "name": "Central Cooum River Urban Basin",
+    "flood_susceptibility_index": 0.811,
+    "historical_vulnerability": "HIGH"
+  },
+  "ZONE_SOUTH_COASTAL_VELACHERY": {
+    "name": "South Chennai Pallikaranai & Velachery Basin",
+    "flood_susceptibility_index": 0.793,
+    "historical_vulnerability": "CRITICAL"
+  },
+  "ZONE_CHEMBARAMBAKKAM_UPSTREAM": {
+    "name": "Western Chembarambakkam Reservoir Headwaters",
+    "flood_susceptibility_index": 0.712,
+    "historical_vulnerability": "HIGH_SURGE"
+  },
+  "ZONE_KOSASTHALAIYAR_NORTH": {
+    "name": "Northern Kosasthalaiyar & Puzhal Basin",
+    "flood_susceptibility_index": 0.697,
+    "historical_vulnerability": "MODERATE"
+  },
+  "ZONE_POONDI_UPLANDS": {
+    "name": "Northwestern Poondi Headwaters & Uplands",
+    "flood_susceptibility_index": 0.588,
+    "historical_vulnerability": "LOW_SURFACE_POOLING"
+  },
+  "ZONE_SOUTHWEST_TAMBARAM": {
+    "name": "Southwestern Tambaram & Guindy Urban Foothills",
+    "flood_susceptibility_index": 0.553,
+    "historical_vulnerability": "MODERATE"
+  }
+}

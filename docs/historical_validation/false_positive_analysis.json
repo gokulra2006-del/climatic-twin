@@ -1,0 +1,88 @@
+{
+  "false_positive_days_count": 65,
+  "total_non_flood_days": 1784,
+  "false_alarm_rate": 0.0364,
+  "diagnostic_findings": "False positives occur predominantly during high antecedent rainfall periods where reservoirs were near full capacity but controlled spillway releases prevented catastrophic urban breach.",
+  "sample_events": [
+    {
+      "date": "2017-05-02",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.065,
+      "prob_60m": 0.604,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2017-05-03",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.075,
+      "prob_60m": 0.527,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2017-07-08",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.005,
+      "prob_60m": 0.526,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2017-08-05",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.029,
+      "prob_60m": 0.681,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2017-08-08",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.005,
+      "prob_60m": 0.789,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2017-08-09",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.018,
+      "prob_60m": 0.825,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2017-09-04",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.05,
+      "prob_60m": 0.662,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2017-09-10",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.039,
+      "prob_60m": 0.551,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2017-10-10",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.04,
+      "prob_60m": 0.53,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    },
+    {
+      "date": "2018-01-25",
+      "rainfall_daily": 0.0,
+      "rainfall_3d_sum": 0.0,
+      "reservoir_fill_ratio": 0.076,
+      "prob_60m": 0.592,
+      "root_cause": "Model sensitivity to antecedent soil moisture"
+    }
+  ]
+}

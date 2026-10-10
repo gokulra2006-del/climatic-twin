@@ -1,0 +1,38 @@
+{
+  "framework": "ClimateTwin Spatial Flood Inundation & Impact Mapping (Phase 15)",
+  "layers": {
+    "Copernicus_DEM": {
+      "type": "DERIVED_GEOSPATIAL",
+      "source": "Copernicus DEM GLO-30",
+      "resolution": "30m",
+      "role": "Topographic elevation depression and slope proxy"
+    },
+    "NASA_IMERG": {
+      "type": "OBSERVED_SATELLITE",
+      "source": "NASA GPM IMERG V07B",
+      "resolution": "0.1 degree (~10km)",
+      "role": "Precipitation accumulation & acceleration"
+    },
+    "ERA5_Land_Runoff": {
+      "type": "REANALYSIS_DERIVED",
+      "source": "ECMWF ERA5-Land",
+      "resolution": "0.1 degree",
+      "role": "Surface runoff stress index"
+    },
+    "Flood_Probability": {
+      "type": "MODEL_PREDICTED",
+      "source": "Phase 10 Random Forest Classifier",
+      "role": "ML current-state hazard classification"
+    },
+    "Conformal_Uncertainty": {
+      "type": "CALIBRATED_UQ",
+      "source": "Phase 11 Inductive Conformal Prediction",
+      "coverage": "90% marginal coverage"
+    },
+    "Inundation_Depth_Status": {
+      "type": "PROXY_ONLY",
+      "status": "NOT DIRECTLY OBSERVED",
+      "role": "Relative Inundation Severity Class (LOW, MODERATE, HIGH, SEVERE)"
+    }
+  }
+}

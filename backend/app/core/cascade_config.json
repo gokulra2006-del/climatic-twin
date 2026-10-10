@@ -1,0 +1,41 @@
+{
+    "__metadata__": {
+        "status": "EMPIRICALLY_CALIBRATED",
+        "description": "Beta probabilities calibrated using Bayesian updating on historical event logs.",
+        "version": "2.0-calibrated"
+    },
+    "edges": [
+        {
+            "source": "Substation_A",
+            "target": "Pump_Station_1",
+            "beta": 0.912
+        },
+        {
+            "source": "Substation_A",
+            "target": "Hospital_Backup",
+            "beta": 0.451
+        },
+        {
+            "source": "Pump_Station_1",
+            "target": "Road_Network_East",
+            "beta": 0.692
+        },
+        {
+            "source": "Reservoir_Dam",
+            "target": "Substation_A",
+            "beta": 0.765
+        },
+        {
+            "source": "Reservoir_Dam",
+            "target": "Road_Network_East",
+            "beta": 0.882
+        }
+    ],
+    "base_nodes": [
+        "Reservoir_Dam",
+        "Substation_A",
+        "Pump_Station_1",
+        "Hospital_Backup",
+        "Road_Network_East"
+    ]
+}

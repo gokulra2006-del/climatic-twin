@@ -1,0 +1,315 @@
+from app.core.satellite_ingestion import satellite_engine
+import os
+import pickle
+import pandas as pd
+import numpy as np
+from datetime import datetime, timezone
+from typing import Dict, Any, Tuple
+from fastapi import HTTPException
+from pydantic import BaseModel
+from app.api.api_v1.endpoints.lead_time_utils import calculate_lead_time
+
+PROCESSED_DIR = r"C:\Users\gokul\Desktop\PROJECTS\climatetwin\data\processed"
+MODELS_DIR = r"C:\Users\gokul\Desktop\PROJECTS\climatetwin\backend\app\models"
+
+# Global Model Cache
+_models = {
+    "heatwave": None,
+    "drought": None,
+    "wildfire": None,
+    "extreme_rain": None
+}
+
+# Global Data Cache to prevent reading 8MB CSVs on every request
+_data_cache = {
+    "noaa": None,
+    "noaa_daily": None,
+    "imerg": None
+}
+
+def load_model(name: str):
+    if _models[name] is not None:
+        return _models[name]
+    path = os.path.join(MODELS_DIR, f"{name}_rf_model.pkl")
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            _models[name] = pickle.load(f)
+            return _models[name]
+    return None
+
+def get_noaa_data():
+    if _data_cache["noaa"] is None:
+        df = pd.read_csv(os.path.join(PROCESSED_DIR, "weather", "noaa_isd_chennai_hourly.csv"))
+        df['DATE'] = pd.to_datetime(df['DATE'])
+        _data_cache["noaa"] = df
+        _data_cache["noaa_daily"] = df.resample('1D', on='DATE').agg({
+            'temperature_c': ['max', 'mean'],
+            'dew_point_c': 'mean',
+            'wind_speed_ms': 'mean'
+        }).dropna()
+    return _data_cache["noaa"], _data_cache["noaa_daily"]
+
+def get_imerg_data():
+    if _data_cache["imerg"] is None:
+        _data_cache["imerg"] = pd.read_csv(os.path.join(PROCESSED_DIR, "rainfall", "imerg_chennai_daily.csv"))
+    return _data_cache["imerg"]
+
+class HazardPrototypeResponse(BaseModel):
+    predicted_state: int
+    probability: float
+    probability_p10: float
+    probability_p50: float
+    probability_p90: float
+    risk_level: str
+    lead_time_hours: int | None = None
+    lead_time_text: str | None = None
+    thresholds_disclaimer: str
+    contributing_features: Dict[str, float]
+    timestamp: datetime
+    data_source: str
+    simulation_label: str
+
+def map_risk_level_generic(prob: float) -> str:
+    if prob < 0.25: return "LOW"
+    elif prob < 0.50: return "MODERATE"
+    elif prob < 0.75: return "HIGH"
+    else: return "CRITICAL"
+
+def calc_heuristic_uncertainty(calc_func, base_kwargs, noise_std=0.1, n_samples=100):
+    probs = []
+    for _ in range(n_samples):
+        noisy_kwargs = {k: v * np.random.normal(1.0, noise_std) for k, v in base_kwargs.items()}
+        probs.append(calc_func(**noisy_kwargs))
+    return float(np.percentile(probs, 10)), float(np.percentile(probs, 50)), float(np.percentile(probs, 90))
+
+
+# --- HEATWAVE ---
+def _calc_heatwave_prob(temp_max, temp_3d, humidity):
+    prob = 0.0
+    if temp_max > 36.0: prob += 0.3
+    if temp_max > 40.0: prob += 0.3
+    if temp_3d > 34.0: prob += 0.2
+    if humidity > 70.0 and temp_max > 35.0: prob += 0.2 # Heat Index Effect
+    return min(1.0, max(0.0, prob))
+
+def get_latest_heatwave() -> dict:
+    try:
+        from app.core.satellite_ingestion import satellite_engine
+        sat_data = satellite_engine.get_latest_satellite_telemetry()
+        hw_live = sat_data.get('heatwave', {})
+        
+        # Use ONLY Live Data
+        temp_max_latest = hw_live.get('air_temp_c', 35.0)
+        apparent_temp = hw_live.get('apparent_temp_c', 36.0)
+        humidity = hw_live.get('humidity_percent', 65.0)
+        lst = hw_live.get('lst_celsius', temp_max_latest)
+        uv = hw_live.get('uv_index', 8.0)
+        solar_rad = hw_live.get('solar_radiation_wm2', 600.0)
+        cloud = hw_live.get('cloud_cover_percent', 20.0)
+        vpd = hw_live.get('vapor_pressure_deficit_kpa', 1.5)
+        wind = hw_live.get('wind_speed_kmh', 10.0)
+        
+        prob = _calc_heatwave_prob(apparent_temp, temp_max_latest, humidity)
+        if uv > 8.0: prob += 0.1
+        if vpd > 2.0: prob += 0.1
+        prob = min(1.0, prob)
+        p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
+        
+        # Phase 17: Calculate 24-hour peak and early warning from trend_48h
+        trend = hw_live.get('trend_48h', [])
+        peak_temp = temp_max_latest
+        peak_heat_index = apparent_temp
+        peak_time = None
+        min_temp = temp_max_latest
+        early_warning_status = "NO IMMEDIATE THREAT"
+        
+        # The trend array has past 24h (0-23) and next 24h (24-47)
+        if len(trend) > 24:
+            next_24h = trend[24:]
+            temps = [t['temp'] for t in next_24h if t['temp'] is not None]
+            apps = [t['apparent_temp'] for t in next_24h if t['apparent_temp'] is not None]
+            
+            if temps:
+                peak_temp = max(temps)
+                min_temp = min(temps)
+            
+            if apps:
+                peak_heat_index = max(apps)
+                peak_idx = apps.index(peak_heat_index)
+                peak_time = next_24h[peak_idx]['time']
+                
+            # Early warning logic based on heat index (apparent temp)
+            if peak_heat_index >= 45:
+                early_warning_status = "CRITICAL"
+            elif peak_heat_index >= 40:
+                early_warning_status = "HIGH RISK"
+            elif peak_heat_index >= 35:
+                early_warning_status = "ADVISORY"
+            elif peak_heat_index >= 32:
+                early_warning_status = "WATCH"
+            
+        return {
+            "predicted_state": 1 if prob >= 0.5 else 0,
+            "probability": prob,
+            "probability_p10": p10,
+            "probability_p50": p50,
+            "probability_p90": p90,
+            "risk_level": map_risk_level_generic(prob),
+            "lead_time_hours": 24,
+            "lead_time_text": "Live Observation Warning",
+            "thresholds_disclaimer": "Live Real-Time Heat Index & LST Model",
+            "contributing_features": {
+                "Apparent Temp (°C)": apparent_temp,
+                "Air Temp (°C)": temp_max_latest,
+                "Surface LST (°C)": lst,
+                "Humidity (%)": humidity,
+                "UV Index": uv,
+                "Solar Radiation (W/m²)": solar_rad,
+                "Cloud Cover (%)": cloud,
+                "Vapor Pressure Deficit (kPa)": vpd,
+                "Wind Speed (km/h)": wind
+            },
+            "timestamp": datetime.now(timezone.utc),
+            "data_source": hw_live.get("source", "Live Open-Meteo"),
+            "simulation_label": "LIVE TELEMETRY",
+            "forecast_metrics": {
+                "peak_temp": peak_temp,
+                "peak_heat_index": peak_heat_index,
+                "min_temp": min_temp,
+                "peak_time": peak_time,
+                "early_warning_status": early_warning_status
+            },
+            "trend_48h": trend
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Heatwave calculation failed: {str(e)}")
+
+
+# --- DROUGHT ---
+def _calc_drought_prob(soil_moist_rz):
+    deficit_ratio = max(0.0, 1.0 - (soil_moist_rz / 0.30)) # 0.30 is healthy baseline
+    return min(1.0, max(0.0, deficit_ratio * 1.5))
+
+def get_latest_drought() -> dict:
+    try:
+        from app.core.satellite_ingestion import satellite_engine
+        sat_data = satellite_engine.get_latest_satellite_telemetry()
+        dr_live = sat_data.get('drought', {})
+        
+        soil_moisture_surface = dr_live.get('soil_moisture_surface', 0.20)
+        soil_moisture_rz = dr_live.get('soil_moisture_root_zone', 0.25)
+        
+        prob = _calc_drought_prob(soil_moisture_rz)
+        p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
+            
+        return {
+            "predicted_state": 1 if prob >= 0.5 else 0,
+            "probability": prob,
+            "probability_p10": p10,
+            "probability_p50": p50,
+            "probability_p90": p90,
+            "risk_level": map_risk_level_generic(prob),
+            "lead_time_hours": 168,
+            "lead_time_text": "Live Root-Zone Assessment",
+            "thresholds_disclaimer": "Live Soil Moisture Deficit Model",
+            "contributing_features": {
+                "Surface Moisture (0-7cm)": soil_moisture_surface,
+                "Root Zone Moisture (7-28cm)": soil_moisture_rz
+            },
+            "timestamp": datetime.now(timezone.utc),
+            "data_source": dr_live.get("source", "Live Copernicus/NOAA"),
+            "simulation_label": "LIVE TELEMETRY"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Drought calculation failed: {str(e)}")
+
+
+# --- WILDFIRE ---
+def _calc_wildfire_prob(fwi, wind, active_fires):
+    prob = 0.0
+    if fwi > 15.0: prob += 0.4
+    if fwi > 30.0: prob += 0.3
+    if wind > 20.0: prob += 0.2
+    if active_fires > 0: prob += 0.5 # Direct hotspot detection triggers high risk
+    return min(1.0, max(0.0, prob))
+
+def get_latest_wildfire() -> dict:
+    try:
+        from app.core.satellite_ingestion import satellite_engine
+        sat_data = satellite_engine.get_latest_satellite_telemetry()
+        wf_live = sat_data.get('wildfire', {})
+        
+        fwi = wf_live.get('fwi_estimate', 5.0)
+        wind = wf_live.get('wind_speed_kmh', 10.0)
+        surface_temp = wf_live.get('surface_temp_c', 30.0)
+        active_fires = wf_live.get('active_fires_detected', 0)
+        max_frp = wf_live.get('max_frp_mw', 0.0)
+        
+        prob = _calc_wildfire_prob(fwi, wind, active_fires)
+        p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
+        
+        return {
+            "predicted_state": 1 if prob >= 0.5 else 0,
+            "probability": prob,
+            "probability_p10": p10,
+            "probability_p50": p50,
+            "probability_p90": p90,
+            "risk_level": map_risk_level_generic(prob),
+            "lead_time_hours": 48,
+            "lead_time_text": "Live FWI Proxy Warning",
+            "thresholds_disclaimer": "Live Fire Weather Index (FWI) Evaluation",
+            "contributing_features": {
+                "Fire Weather Index (FWI)": fwi,
+                "NASA Active Hotspots (VIIRS)": active_fires,
+                "Max Fire Radiative Power (MW)": max_frp,
+                "Wind Speed (km/h)": wind,
+                "Surface Temp (°C)": surface_temp
+            },
+            "timestamp": datetime.now(timezone.utc),
+            "data_source": wf_live.get("source", "Live Open-Meteo"),
+            "simulation_label": "LIVE TELEMETRY"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Wildfire calculation failed: {str(e)}")
+
+
+# --- EXTREME RAINFALL ---
+def _calc_extreme_rain_prob(cape, rain):
+    prob = 0.0
+    if cape > 1500.0: prob += 0.3
+    if cape > 2500.0: prob += 0.4
+    if rain > 50.0: prob += 0.3
+    return min(1.0, max(0.0, prob))
+
+def get_latest_extreme_rainfall() -> dict:
+    try:
+        from app.core.satellite_ingestion import satellite_engine
+        sat_data = satellite_engine.get_latest_satellite_telemetry()
+        er_live = sat_data.get('extreme_rainfall', {})
+        
+        cape = er_live.get('cape_j_kg', 0.0)
+        rain = er_live.get('current_precip_mm', 0.0)
+        
+        prob = _calc_extreme_rain_prob(cape, rain)
+        p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
+            
+        return {
+            "predicted_state": 1 if prob >= 0.5 else 0,
+            "probability": prob,
+            "probability_p10": p10,
+            "probability_p50": p50,
+            "probability_p90": p90,
+            "risk_level": map_risk_level_generic(prob),
+            "lead_time_hours": 6,
+            "lead_time_text": "Live Convective Monitoring",
+            "thresholds_disclaimer": "Live Convective Potential (CAPE) Analysis",
+            "contributing_features": {
+                "Convective Energy (CAPE)": cape,
+                "Current Precip (mm)": rain
+            },
+            "timestamp": datetime.now(timezone.utc),
+            "data_source": er_live.get("source", "Live Open-Meteo"),
+            "simulation_label": "LIVE TELEMETRY"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Extreme Rainfall calculation failed: {str(e)}")

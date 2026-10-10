@@ -1,0 +1,212 @@
+{
+  "timestamp": "2026-10-03T16:59:12.523059+00:00",
+  "total_historical_events": 10,
+  "backtest_duration_days": 1868,
+  "table_i": [
+    {
+      "Metric": "End-to-end latency",
+      "Measured Value": "30.54 ms (Mean: 36.03 ms)",
+      "95% CI": "[29.97, 31.85] ms",
+      "Target / Baseline": "< 5,000 ms (Paper target)",
+      "Status": "MEASURED (Satisfies target < 5s; P95 = 47.60 ms)"
+    },
+    {
+      "Metric": "RMSE",
+      "Measured Value": "0.2654",
+      "95% CI": "[0.2482, 0.2798]",
+      "Target / Baseline": "< 0.35 (Forecasting benchmark)",
+      "Status": "MEASURED (Brier-scale probabilistic forecast RMSE)"
+    },
+    {
+      "Metric": "POD",
+      "Measured Value": "0.700 (7/10 events; Daily: 0.593)",
+      "95% CI": "[0.400, 1.000]",
+      "Target / Baseline": "> 0.85 (High reliability alert threshold)",
+      "Status": "MEASURED (Historical flood event detection)"
+    },
+    {
+      "Metric": "FAR",
+      "Measured Value": "0.886 (POFD / Alarm Rate: 0.0674)",
+      "95% CI": "[0.824, 0.933]",
+      "Target / Baseline": "< 0.50 (Controlled false alarm ratio)",
+      "Status": "MEASURED (False alarms occur during controlled reservoir spillway releases)"
+    },
+    {
+      "Metric": "Lead time",
+      "Measured Value": "8640.0 min (144.0 h, Mean: 7405.7 min)",
+      "95% CI": "[4320.0, 10080.0] min",
+      "Target / Baseline": ">= 30.0 min (Emergency response requirement)",
+      "Status": "MEASURED (Advance notice via upstream telemetry & surrogate)"
+    }
+  ],
+  "contingency_table": {
+    "TP": 16,
+    "FP": 124,
+    "FN": 11,
+    "TN": 1717,
+    "POD_event": 0.7,
+    "POD_daily": 0.5926,
+    "FAR_daily": 0.8857,
+    "POFD_daily": 0.0674
+  },
+  "event_level_evaluations": [
+    {
+      "event_id": "EVT_44",
+      "name": "Nov 2015 Early Monsoon Inundation",
+      "start_date": "2015-11-09",
+      "end_date": "2015-11-09",
+      "is_holdout": false,
+      "fatalities": 13,
+      "peak_rain_mm": 36.0,
+      "peak_storage_ratio": 0.021,
+      "peak_prob_60m": 0.219,
+      "detected": false,
+      "lead_time_min": 0.0,
+      "rmse": 0.3423,
+      "fp_days_leadup": 0
+    },
+    {
+      "event_id": "EVT_45",
+      "name": "Nov 2015 Monsoon Surge Phase 1",
+      "start_date": "2015-11-11",
+      "end_date": "2015-11-13",
+      "is_holdout": false,
+      "fatalities": 25,
+      "peak_rain_mm": 61.1,
+      "peak_storage_ratio": 0.41,
+      "peak_prob_60m": 0.992,
+      "detected": true,
+      "lead_time_min": 1440.0,
+      "rmse": 0.3869,
+      "fp_days_leadup": 0
+    },
+    {
+      "event_id": "EVT_46",
+      "name": "Nov 2015 Deep Depression Extreme Flood",
+      "start_date": "2015-11-18",
+      "end_date": "2015-11-22",
+      "is_holdout": false,
+      "fatalities": 47,
+      "peak_rain_mm": 49.1,
+      "peak_storage_ratio": 0.41,
+      "peak_prob_60m": 0.997,
+      "detected": true,
+      "lead_time_min": 10080.0,
+      "rmse": 0.3154,
+      "fp_days_leadup": 0
+    },
+    {
+      "event_id": "EVT_47",
+      "name": "Nov 23 2015 Torrential Rain Surge",
+      "start_date": "2015-11-23",
+      "end_date": "2015-11-23",
+      "is_holdout": false,
+      "fatalities": 50,
+      "peak_rain_mm": 29.6,
+      "peak_storage_ratio": 0.41,
+      "peak_prob_60m": 0.485,
+      "detected": true,
+      "lead_time_min": 7200.0,
+      "rmse": 0.3121,
+      "fp_days_leadup": 0
+    },
+    {
+      "event_id": "EVT_48",
+      "name": "Late Nov 2015 Pre-Deluge Catchment Saturation",
+      "start_date": "2015-11-28",
+      "end_date": "2015-11-30",
+      "is_holdout": false,
+      "fatalities": 32,
+      "peak_rain_mm": 51.0,
+      "peak_storage_ratio": 0.41,
+      "peak_prob_60m": 0.997,
+      "detected": true,
+      "lead_time_min": 10080.0,
+      "rmse": 0.3606,
+      "fp_days_leadup": 0
+    },
+    {
+      "event_id": "EVT_49",
+      "name": "Dec 2015 Great Chennai Deluge (Historic Disaster)",
+      "start_date": "2015-12-01",
+      "end_date": "2015-12-03",
+      "is_holdout": false,
+      "fatalities": 17,
+      "peak_rain_mm": 237.9,
+      "peak_storage_ratio": 0.137,
+      "peak_prob_60m": 0.979,
+      "detected": true,
+      "lead_time_min": 4320.0,
+      "rmse": 0.3437,
+      "fp_days_leadup": 0
+    },
+    {
+      "event_id": "EVT_50",
+      "name": "Dec 2015 Post-Flood Drainage & Secondary Surge",
+      "start_date": "2015-12-08",
+      "end_date": "2015-12-11",
+      "is_holdout": false,
+      "fatalities": 30,
+      "peak_rain_mm": 1.0,
+      "peak_storage_ratio": 0.106,
+      "peak_prob_60m": 0.957,
+      "detected": true,
+      "lead_time_min": 10080.0,
+      "rmse": 0.3909,
+      "fp_days_leadup": 0
+    },
+    {
+      "event_id": "EVT_51",
+      "name": "Nov 2017 Northeast Monsoon Urban Floods",
+      "start_date": "2017-11-02",
+      "end_date": "2017-11-04",
+      "is_holdout": false,
+      "fatalities": 10,
+      "peak_rain_mm": 0.0,
+      "peak_storage_ratio": 0.071,
+      "peak_prob_60m": 0.069,
+      "detected": false,
+      "lead_time_min": 0.0,
+      "rmse": 0.5169,
+      "fp_days_leadup": 0
+    },
+    {
+      "event_id": "EVT_52",
+      "name": "March 2018 Unseasonal Convective Flooding",
+      "start_date": "2018-03-14",
+      "end_date": "2018-03-16",
+      "is_holdout": true,
+      "fatalities": 0,
+      "peak_rain_mm": 0.0,
+      "peak_storage_ratio": 0.075,
+      "peak_prob_60m": 0.699,
+      "detected": true,
+      "lead_time_min": 8640.0,
+      "rmse": 0.5584,
+      "fp_days_leadup": 6
+    },
+    {
+      "event_id": "EVT_53",
+      "name": "Dec 2019 Northeast Monsoon Surge",
+      "start_date": "2019-12-02",
+      "end_date": "2019-12-02",
+      "is_holdout": true,
+      "fatalities": 17,
+      "peak_rain_mm": 0.0,
+      "peak_storage_ratio": 0.039,
+      "peak_prob_60m": 0.228,
+      "detected": false,
+      "lead_time_min": 0.0,
+      "rmse": 0.3459,
+      "fp_days_leadup": 0
+    }
+  ],
+  "latency_breakdown_averages_ms": {
+    "ingest_ms": 0.053,
+    "assimilation_ms": 0.212,
+    "inference_ms": 34.953,
+    "uncertainty_ms": 0.35,
+    "alerting_ms": 0.454,
+    "end_to_end_ms": 36.026
+  }
+}

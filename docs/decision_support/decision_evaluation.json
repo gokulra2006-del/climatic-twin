@@ -1,0 +1,244 @@
+{
+  "model_version": "CLIMATETWIN_DSS_v1.0_PROTOTYPE",
+  "evaluation_timestamp": "2026-09-02T11:48:45.746719+00:00",
+  "scenario_results": [
+    {
+      "scenario_id": "SCENARIO_A_NOMINAL",
+      "scenario_name": "Nominal Baseline Conditions",
+      "label": "SIMULATED DECISION-SUPPORT BENCHMARK",
+      "inputs_summary": {
+        "flood_probability": 0.08,
+        "uncertainty_level": "LOW",
+        "compound_risk_score": 0.12,
+        "aggregate_shs": 0.97,
+        "max_asset_risk_index": 0.25,
+        "trend_direction": "STABLE"
+      },
+      "decision_level": "MONITOR",
+      "decision_score": 0.3439,
+      "decision_confidence": "HIGH",
+      "data_quality_gate": "PASS",
+      "escalation_state": "ESCALATING",
+      "recommended_action": "Increase telemetry sampling frequency. Monitor weather forecasts and reservoir levels.",
+      "escalation_reasons": [
+        "High forecast confidence (0.84) supports escalation"
+      ],
+      "verification_requirements": [],
+      "affected_assets_count": 3,
+      "top_priority_asset": "ADYAR_OUTFALL"
+    },
+    {
+      "scenario_id": "SCENARIO_B_HEAVY_RAIN",
+      "scenario_name": "Heavy Rainfall + Healthy Telemetry",
+      "label": "SIMULATED DECISION-SUPPORT BENCHMARK",
+      "inputs_summary": {
+        "flood_probability": 0.45,
+        "uncertainty_level": "LOW",
+        "compound_risk_score": 0.5,
+        "aggregate_shs": 0.96,
+        "max_asset_risk_index": 0.55,
+        "trend_direction": "RISING"
+      },
+      "decision_level": "ALERT",
+      "decision_score": 0.6187,
+      "decision_confidence": "HIGH",
+      "data_quality_gate": "PASS",
+      "escalation_state": "ESCALATING",
+      "recommended_action": "Deploy local flood response teams. Issue public warnings for high-risk zones. Verify reservoir telemetry.",
+      "escalation_reasons": [
+        "Elevated hazard severity (0.51)",
+        "Elevated compound risk (0.50)",
+        "Critical infrastructure asset exposure detected (ARI: 0.62)",
+        "Sustained hazard persistence over multiple cycles (0.50)",
+        "High forecast confidence (0.81) supports escalation"
+      ],
+      "verification_requirements": [
+        "Dispatch rapid infrastructure assessment team to high-risk asset"
+      ],
+      "affected_assets_count": 3,
+      "top_priority_asset": "ADYAR_OUTFALL"
+    },
+    {
+      "scenario_id": "SCENARIO_C_CRITICAL_COMPOUND",
+      "scenario_name": "Heavy Rainfall + Saturated Reservoir + Critical Asset",
+      "label": "SIMULATED DECISION-SUPPORT BENCHMARK",
+      "inputs_summary": {
+        "flood_probability": 0.82,
+        "uncertainty_level": "LOW",
+        "compound_risk_score": 0.92,
+        "aggregate_shs": 0.95,
+        "max_asset_risk_index": 0.91,
+        "trend_direction": "RISING"
+      },
+      "decision_level": "EMERGENCY",
+      "decision_score": 0.9004,
+      "decision_confidence": "HIGH",
+      "data_quality_gate": "PASS",
+      "escalation_state": "ESCALATING",
+      "recommended_action": "Full emergency mobilization. Evacuate high-risk low-lying areas. Open emergency operations center.",
+      "escalation_reasons": [
+        "High hazard severity (0.88): dominant hazard is EXTREME_RAINFALL",
+        "High compound multi-hazard risk (0.92)",
+        "Critical infrastructure asset exposure detected (ARI: 0.93)",
+        "Sustained hazard persistence over multiple cycles (0.95)",
+        "High forecast confidence (0.82) supports escalation"
+      ],
+      "verification_requirements": [
+        "Dispatch rapid infrastructure assessment team to high-risk asset"
+      ],
+      "affected_assets_count": 3,
+      "top_priority_asset": "ADYAR_OUTFALL"
+    },
+    {
+      "scenario_id": "SCENARIO_D_HIGH_UNCERTAINTY",
+      "scenario_name": "High Hazard + High Uncertainty",
+      "label": "SIMULATED DECISION-SUPPORT BENCHMARK",
+      "inputs_summary": {
+        "flood_probability": 0.65,
+        "uncertainty_level": "HIGH",
+        "compound_risk_score": 0.6,
+        "aggregate_shs": 0.94,
+        "max_asset_risk_index": 0.6,
+        "trend_direction": "RISING"
+      },
+      "decision_level": "PREPARE",
+      "decision_score": 0.531,
+      "decision_confidence": "LOW",
+      "data_quality_gate": "PASS",
+      "escalation_state": "ESCALATING",
+      "recommended_action": "Activate preparedness protocols. Pre-position flood response teams. Alert vulnerable communities.",
+      "escalation_reasons": [
+        "High hazard severity (0.61): dominant hazard is FLOOD_INUNDATION",
+        "High compound multi-hazard risk (0.60)",
+        "Critical infrastructure asset exposure detected (ARI: 0.64)"
+      ],
+      "verification_requirements": [
+        "Verify prediction with independent meteorological source before full escalation",
+        "Dispatch rapid infrastructure assessment team to high-risk asset"
+      ],
+      "affected_assets_count": 2,
+      "top_priority_asset": "ADYAR_OUTFALL"
+    },
+    {
+      "scenario_id": "SCENARIO_E_DEGRADED_SENSORS",
+      "scenario_name": "High Hazard + Degraded Sensor Network",
+      "label": "SIMULATED DECISION-SUPPORT BENCHMARK",
+      "inputs_summary": {
+        "flood_probability": 0.7,
+        "uncertainty_level": "MODERATE",
+        "compound_risk_score": 0.65,
+        "aggregate_shs": 0.55,
+        "max_asset_risk_index": 0.58,
+        "trend_direction": "RISING"
+      },
+      "decision_level": "PREPARE",
+      "decision_score": 0.5615,
+      "decision_confidence": "MODERATE",
+      "data_quality_gate": "DEGRADED",
+      "escalation_state": "ESCALATING",
+      "recommended_action": "Activate preparedness protocols. Pre-position flood response teams. Alert vulnerable communities.",
+      "escalation_reasons": [
+        "High hazard severity (0.66): dominant hazard is EXTREME_RAINFALL",
+        "High compound multi-hazard risk (0.65)",
+        "Critical infrastructure asset exposure detected (ARI: 0.63)",
+        "Sustained hazard persistence over multiple cycles (0.50)"
+      ],
+      "verification_requirements": [
+        "Confirm observation data from backup or manual field verification",
+        "Dispatch rapid infrastructure assessment team to high-risk asset"
+      ],
+      "affected_assets_count": 1,
+      "top_priority_asset": "ADYAR_OUTFALL"
+    },
+    {
+      "scenario_id": "SCENARIO_F_MODERATE_CRITICAL_ASSET",
+      "scenario_name": "Moderate Hazard + Critical Infrastructure",
+      "label": "SIMULATED DECISION-SUPPORT BENCHMARK",
+      "inputs_summary": {
+        "flood_probability": 0.35,
+        "uncertainty_level": "MODERATE",
+        "compound_risk_score": 0.4,
+        "aggregate_shs": 0.92,
+        "max_asset_risk_index": 0.55,
+        "trend_direction": "STABLE"
+      },
+      "decision_level": "PREPARE",
+      "decision_score": 0.4755,
+      "decision_confidence": "MODERATE",
+      "data_quality_gate": "PASS",
+      "escalation_state": "ESCALATING",
+      "recommended_action": "Activate preparedness protocols. Pre-position flood response teams. Alert vulnerable communities.",
+      "escalation_reasons": [
+        "Elevated compound risk (0.40)",
+        "Critical infrastructure asset exposure detected (ARI: 0.65)"
+      ],
+      "verification_requirements": [
+        "Dispatch rapid infrastructure assessment team to high-risk asset"
+      ],
+      "affected_assets_count": 2,
+      "top_priority_asset": "CHEMBARAMBAKKAM"
+    },
+    {
+      "scenario_id": "SCENARIO_G_LOW_HIGH_UNCERTAINTY",
+      "scenario_name": "Low Hazard + High Uncertainty",
+      "label": "SIMULATED DECISION-SUPPORT BENCHMARK",
+      "inputs_summary": {
+        "flood_probability": 0.12,
+        "uncertainty_level": "HIGH",
+        "compound_risk_score": 0.18,
+        "aggregate_shs": 0.93,
+        "max_asset_risk_index": 0.28,
+        "trend_direction": "STABLE"
+      },
+      "decision_level": "MONITOR",
+      "decision_score": 0.2337,
+      "decision_confidence": "LOW",
+      "data_quality_gate": "PASS",
+      "escalation_state": "ESCALATING",
+      "recommended_action": "Increase telemetry sampling frequency. Monitor weather forecasts and reservoir levels.",
+      "escalation_reasons": [],
+      "verification_requirements": [
+        "Verify prediction with independent meteorological source before full escalation"
+      ],
+      "affected_assets_count": 3,
+      "top_priority_asset": "ADYAR_OUTFALL"
+    },
+    {
+      "scenario_id": "SCENARIO_H_RECOVERY",
+      "scenario_name": "Hazard Recovery / De-escalation",
+      "label": "SIMULATED DECISION-SUPPORT BENCHMARK",
+      "inputs_summary": {
+        "flood_probability": 0.1,
+        "uncertainty_level": "LOW",
+        "compound_risk_score": 0.1,
+        "aggregate_shs": 0.97,
+        "max_asset_risk_index": 0.22,
+        "trend_direction": "FALLING"
+      },
+      "decision_level": "MONITOR",
+      "decision_score": 0.3309,
+      "decision_confidence": "HIGH",
+      "data_quality_gate": "PASS",
+      "escalation_state": "DE-ESCALATING",
+      "recommended_action": "Increase telemetry sampling frequency. Monitor weather forecasts and reservoir levels.",
+      "escalation_reasons": [
+        "High forecast confidence (0.85) supports escalation"
+      ],
+      "verification_requirements": [],
+      "affected_assets_count": 3,
+      "top_priority_asset": "ADYAR_OUTFALL"
+    }
+  ],
+  "monotonicity": {
+    "hazard_severity": "PASS",
+    "asset_risk": "PASS",
+    "uncertainty_confidence_inverse": "PASS",
+    "criticality_priority": "PASS"
+  },
+  "data_quality_gate_states_observed": [
+    "PASS",
+    "DEGRADED",
+    "BLOCKED"
+  ],
+  "thresholds_disclaimer": "PROTOTYPE RESEARCH THRESHOLDS: These decision thresholds are preliminary research values. Operational deployment requires calibration by domain experts, emergency management authorities, and local stakeholders. This system provides decision support only and is not an autonomous emergency authority. Synthetic scenarios do not represent real emergency decisions."
+}

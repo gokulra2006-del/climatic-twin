@@ -1,0 +1,113 @@
+{
+  "model_version": "CLIMATETWIN_DSS_v1.0_PROTOTYPE",
+  "dss_weights": {
+    "hazard_severity": 0.3,
+    "asset_risk": 0.2,
+    "compound_risk": 0.15,
+    "forecast_confidence": 0.15,
+    "data_quality": 0.1,
+    "persistence": 0.1
+  },
+  "decision_thresholds": {
+    "NORMAL": {
+      "min": 0.0,
+      "max": 0.2
+    },
+    "MONITOR": {
+      "min": 0.2,
+      "max": 0.4
+    },
+    "PREPARE": {
+      "min": 0.4,
+      "max": 0.6
+    },
+    "ALERT": {
+      "min": 0.6,
+      "max": 0.8
+    },
+    "EMERGENCY": {
+      "min": 0.8,
+      "max": 1.0
+    }
+  },
+  "hysteresis_band": 0.1,
+  "uncertainty_decision_matrix": {
+    "HIGH_LOW": {
+      "modifier": "STRONG_ESCALATION",
+      "confidence": "HIGH",
+      "action": "Immediate escalation with high confidence"
+    },
+    "HIGH_MODERATE": {
+      "modifier": "ESCALATION",
+      "confidence": "MODERATE",
+      "action": "Escalation with moderate verification"
+    },
+    "HIGH_HIGH": {
+      "modifier": "PRECAUTIONARY_ESCALATION",
+      "confidence": "LOW",
+      "action": "Precautionary escalation; verification required"
+    },
+    "MODERATE_LOW": {
+      "modifier": "PREPAREDNESS",
+      "confidence": "HIGH",
+      "action": "Monitoring and preparedness activation"
+    },
+    "MODERATE_MODERATE": {
+      "modifier": "ENHANCED_MONITORING",
+      "confidence": "MODERATE",
+      "action": "Enhanced monitoring with local verification"
+    },
+    "MODERATE_HIGH": {
+      "modifier": "VERIFICATION_REQUIRED",
+      "confidence": "LOW",
+      "action": "Enhanced monitoring; local verification required"
+    },
+    "LOW_LOW": {
+      "modifier": "NOMINAL",
+      "confidence": "HIGH",
+      "action": "Routine surveillance"
+    },
+    "LOW_MODERATE": {
+      "modifier": "NOMINAL_WATCH",
+      "confidence": "MODERATE",
+      "action": "Routine surveillance with periodic check"
+    },
+    "LOW_HIGH": {
+      "modifier": "SAFETY_UNCONFIRMED",
+      "confidence": "LOW",
+      "action": "Do not declare safety; request telemetry verification"
+    }
+  },
+  "data_quality_gate_thresholds": {
+    "PASS": {
+      "min_aggregate_shs": 0.7,
+      "max_degraded_critical": 0
+    },
+    "DEGRADED": {
+      "min_aggregate_shs": 0.45,
+      "max_degraded_critical": 2
+    },
+    "BLOCKED": {
+      "min_aggregate_shs": 0.0,
+      "max_degraded_critical": 99
+    }
+  },
+  "recommended_actions": {
+    "NORMAL": "Maintain routine environmental surveillance. No immediate action required.",
+    "MONITOR": "Increase telemetry sampling frequency. Monitor weather forecasts and reservoir levels.",
+    "PREPARE": "Activate preparedness protocols. Pre-position flood response teams. Alert vulnerable communities.",
+    "ALERT": "Deploy local flood response teams. Issue public warnings for high-risk zones. Verify reservoir telemetry.",
+    "EMERGENCY": "Full emergency mobilization. Evacuate high-risk low-lying areas. Open emergency operations center."
+  },
+  "verification_templates": {
+    "HIGH_UNCERTAINTY": "Verify prediction with independent meteorological source before full escalation",
+    "DEGRADED_TELEMETRY": "Confirm observation data from backup or manual field verification",
+    "STALE_RESERVOIR": "Request manual reservoir gauge reading from CMWSSB field operator",
+    "CROSS_SOURCE_DISAGREEMENT": "Reconcile conflicting satellite and ground station measurements",
+    "ANOMALY_DETECTED": "Inspect flagged anomalous sensor reading for hardware fault or extreme event",
+    "CRITICAL_ASSET_EXPOSED": "Dispatch rapid infrastructure assessment team to high-risk asset",
+    "BLOCKED_DATA": "Decision confidence severely degraded; require manual situation assessment before action"
+  },
+  "thresholds_disclaimer": "PROTOTYPE RESEARCH THRESHOLDS: These decision thresholds are preliminary research values. Operational deployment requires calibration by domain experts, emergency management authorities, and local stakeholders. This system provides decision support only and is not an autonomous emergency authority. Synthetic scenarios do not represent real emergency decisions.",
+  "output_classification": "RULE-BASED / DERIVED"
+}

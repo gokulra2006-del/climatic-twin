@@ -1,0 +1,63 @@
+{
+  "baseline_compound_risk": 0.3,
+  "parameter_sensitivities": {
+    "rainfall_daily_mm": {
+      "values": [
+        0.0,
+        25.0,
+        50.0,
+        100.0,
+        150.0,
+        200.0
+      ],
+      "scores": [
+        0.133,
+        0.262,
+        0.436,
+        0.793,
+        0.892,
+        0.892
+      ],
+      "gradient": 0.0038
+    },
+    "reservoir_fill_ratio": {
+      "values": [
+        0.1,
+        0.3,
+        0.5,
+        0.7,
+        0.9,
+        1.0
+      ],
+      "scores": [
+        0.25,
+        0.308,
+        0.366,
+        0.423,
+        0.524,
+        0.558
+      ],
+      "gradient": 0.3422
+    },
+    "wind_speed_ms": {
+      "values": [
+        0.0,
+        5.0,
+        10.0,
+        15.0,
+        20.0,
+        25.0
+      ],
+      "scores": [
+        0.28,
+        0.3,
+        0.32,
+        0.363,
+        0.39,
+        0.418
+      ],
+      "gradient": 0.0055
+    }
+  },
+  "summary": "Precipitation intensity and reservoir storage saturation are the dominant physical drivers of compound flood stress."
+}

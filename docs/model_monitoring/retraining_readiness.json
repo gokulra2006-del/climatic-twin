@@ -1,0 +1,47 @@
+{
+  "generated_at": "2026-09-13T15:44:08.922970+00:00",
+  "retraining_readiness": {
+    "readiness_score": 70,
+    "model_status": "DRIFT DETECTED",
+    "recommendation": "PREPARE CANDIDATE MODEL EVALUATION",
+    "reason": "Persistent environmental distribution drift detected across weekly and monthly horizons. Data quality remains healthy. Candidate retraining is warranted once sufficient ground-truth labels are compiled.",
+    "data_quality_gated": false
+  },
+  "temporal_drift": {
+    "24h_status": "INSUFFICIENT_DATA",
+    "7d_status": "DRIFT DETECTED",
+    "30d_status": "DRIFT DETECTED",
+    "pattern": "PERSISTENT DISTRIBUTION DRIFT",
+    "interpretation": "Sustained distribution shift across 7-day and 30-day horizons. Environmental baseline has altered.",
+    "details": {
+      "24h": {
+        "aggregate_psi": 0.0,
+        "sample_size": 0
+      },
+      "7d": {
+        "aggregate_psi": 8.901,
+        "sample_size": 6
+      },
+      "30d": {
+        "aggregate_psi": 7.3651,
+        "sample_size": 29
+      }
+    }
+  },
+  "data_quality_gate": {
+    "status": "HEALTHY",
+    "aggregate_score": 0.95,
+    "degraded_sources_count": 0,
+    "anomalous_sources_count": 0,
+    "telemetry_state": "NOMINAL",
+    "message": "All primary environmental telemetry sources reporting valid physical ranges."
+  },
+  "uncertainty": {
+    "status": "HEALTHY",
+    "condition": "STABLE CONFIDENCE",
+    "epistemic_variance_mean": 0.00757,
+    "prediction_interval_width_mean": 0.12,
+    "high_uncertainty_frequency": 0.0,
+    "note": "Elevated uncertainty indicates novel input regions where ensemble trees disagree. Does not prove model is wrong."
+  }
+}

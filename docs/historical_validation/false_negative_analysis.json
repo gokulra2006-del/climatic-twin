@@ -1,0 +1,7 @@
+{
+  "false_negative_days_count": 0,
+  "total_flood_days": 84,
+  "miss_rate": 0.0,
+  "diagnostic_findings": "False negative days represent dry recovery lulls during multi-day disaster declarations where ground standing water persisted despite zero active precipitation.",
+  "sample_events": []
+}

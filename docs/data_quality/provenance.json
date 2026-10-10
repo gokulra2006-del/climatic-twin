@@ -1,0 +1,123 @@
+{
+  "framework": "ClimateTwin Phase 16 Telemetry Quality Intelligence",
+  "source_catalog": [
+    {
+      "source_id": "NOAA_ISD_432790",
+      "name": "NOAA ISD Surface Weather Station (Chennai Airport / 432790)",
+      "source_type": "OBSERVED",
+      "variables": [
+        "temperature",
+        "dew_point",
+        "wind_speed"
+      ],
+      "reporting_interval_minutes": 60,
+      "stale_threshold_minutes": 180,
+      "nominal_value": {
+        "temperature": 31.2,
+        "dew_point": 24.5,
+        "wind_speed": 4.5
+      }
+    },
+    {
+      "source_id": "NASA_IMERG_CHENNAI",
+      "name": "NASA GPM IMERG Precipitation (V07B 0.1\u00b0 Grid)",
+      "source_type": "SATELLITE_DERIVED",
+      "variables": [
+        "rainfall"
+      ],
+      "reporting_interval_minutes": 30,
+      "stale_threshold_minutes": 120,
+      "nominal_value": {
+        "rainfall": 45.0
+      }
+    },
+    {
+      "source_id": "CMWSSB_POONDI",
+      "name": "CMWSSB Poondi Reservoir Headworks Gauge",
+      "source_type": "OBSERVED",
+      "variables": [
+        "water_level_POONDI"
+      ],
+      "reporting_interval_minutes": 720,
+      "stale_threshold_minutes": 1440,
+      "nominal_value": {
+        "water_level_POONDI": 2820.0
+      }
+    },
+    {
+      "source_id": "CMWSSB_REDHILLS",
+      "name": "CMWSSB Redhills (Puzhal Lake) Intake Gauge",
+      "source_type": "OBSERVED",
+      "variables": [
+        "water_level_REDHILLS"
+      ],
+      "reporting_interval_minutes": 720,
+      "stale_threshold_minutes": 1440,
+      "nominal_value": {
+        "water_level_REDHILLS": 2910.0
+      }
+    },
+    {
+      "source_id": "CMWSSB_CHEMBARAMBAKKAM",
+      "name": "CMWSSB Chembarambakkam Reservoir Spillway Gauge",
+      "source_type": "OBSERVED",
+      "variables": [
+        "water_level_CHEMBARAMBAKKAM"
+      ],
+      "reporting_interval_minutes": 720,
+      "stale_threshold_minutes": 1440,
+      "nominal_value": {
+        "water_level_CHEMBARAMBAKKAM": 3120.0
+      }
+    },
+    {
+      "source_id": "CMWSSB_CHOLAVARAM",
+      "name": "CMWSSB Cholavaram Reservoir Gauge",
+      "source_type": "OBSERVED",
+      "variables": [
+        "water_level_CHOLAVARAM"
+      ],
+      "reporting_interval_minutes": 720,
+      "stale_threshold_minutes": 1440,
+      "nominal_value": {
+        "water_level_CHOLAVARAM": 820.0
+      }
+    },
+    {
+      "source_id": "ERA5_LAND_REANALYSIS",
+      "name": "ECMWF ERA5-Land Hydrometeorological Reanalysis",
+      "source_type": "REANALYSIS_DERIVED",
+      "variables": [
+        "runoff",
+        "temperature"
+      ],
+      "reporting_interval_minutes": 60,
+      "stale_threshold_minutes": 360,
+      "nominal_value": {
+        "runoff": 0.35,
+        "temperature": 30.8
+      }
+    },
+    {
+      "source_id": "IMD_CHENNAI_RADAR",
+      "name": "IMD Chennai Doppler Weather Radar (DWR Coastal Echo)",
+      "source_type": "OBSERVED_REMOTE",
+      "variables": [
+        "rainfall"
+      ],
+      "reporting_interval_minutes": 15,
+      "stale_threshold_minutes": 60,
+      "nominal_value": {
+        "rainfall": 42.0
+      }
+    }
+  ],
+  "classification_rules": {
+    "HEALTHY": "Recent timestamp, physically bounded, nominal temporal rate of change",
+    "DEGRADED": "Minor quality flag or static repetitive values",
+    "STALE": "Observation timestamp exceeds stale reporting latency threshold",
+    "MISSING": "Null/absent telemetry stream on active collection cycle",
+    "ANOMALOUS": "Statistically extreme innovation (z > 3.5) or out-of-bounds physical measurement",
+    "OFFLINE": "Source disconnected or power drop"
+  }
+}

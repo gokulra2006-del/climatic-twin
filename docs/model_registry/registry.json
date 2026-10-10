@@ -1,0 +1,66 @@
+{
+  "model_registry_version": "1.0.0",
+  "project": "ClimateTwin Chennai Digital Twin",
+  "domain": "Urban Flood Inundation & Multi-Horizon Risk",
+  "champion_model_id": "ClimateTwin-Flood-RF-v2.0",
+  "models": [
+    {
+      "model_version": "ClimateTwin-Flood-RF-v1.0",
+      "algorithm": "RandomForestClassifier",
+      "training_dataset": "IMERG + CMWSSB Reservoirs + NOAA ISD (14 features)",
+      "training_period": "2015-01-01 to 2017-12-31",
+      "validation_period": "2018-01-01 to 2020-12-31",
+      "feature_count": 14,
+      "calibration": "Uncalibrated",
+      "uncertainty": "Tree dispersion heuristic",
+      "deployment_status": "SUPERSEDED",
+      "artifact_path": "backend/app/models/flood_rf_model.pkl"
+    },
+    {
+      "model_version": "ClimateTwin-Flood-RF-v2.0",
+      "algorithm": "CalibratedClassifierCV(RandomForestClassifier, method='sigmoid')",
+      "training_dataset": "IMERG V07B + CMWSSB Multi-Reservoir + NOAA ISD Hourly Resampled (20 aligned features)",
+      "training_period": "2015-01-01 to 2017-12-31",
+      "validation_period": "2018-01-01 to 2020-12-31",
+      "feature_count": 20,
+      "validation_metrics": {
+        "roc_auc": 0.9014,
+        "pr_auc": 0.0539,
+        "f1_score": 0.0909,
+        "recall": 0.7500,
+        "precision": 0.0536,
+        "brier_score": 0.0197,
+        "ece": 0.0340,
+        "false_alarm_rate": 0.0245,
+        "miss_rate": 0.2500
+      },
+      "calibration": "Sigmoid (Platt Scaling)",
+      "uncertainty": "Split-Conformal Prediction & Epistemic Tree Dispersion",
+      "deployment_status": "CHAMPION_DEPLOYED",
+      "artifact_path": "backend/app/models/best_live_model.pkl"
+    },
+    {
+      "model_version": "ClimateTwin-Flood-HGB-v2.1",
+      "algorithm": "HistGradientBoostingClassifier (Calibrated)",
+      "training_dataset": "Extended Aligned Environmental Archive (20 features)",
+      "training_period": "2015-01-01 to 2018-12-31",
+      "validation_period": "2019-01-01 to 2020-12-31",
+      "feature_count": 20,
+      "validation_metrics": {
+        "roc_auc": 0.8842,
+        "pr_auc": 0.0482,
+        "f1_score": 0.0815,
+        "recall": 0.6667,
+        "precision": 0.0465,
+        "brier_score": 0.0221,
+        "ece": 0.0392,
+        "false_alarm_rate": 0.0312,
+        "miss_rate": 0.3333
+      },
+      "calibration": "Isotonic Regression",
+      "uncertainty": "Conformal Quantiles",
+      "deployment_status": "CANDIDATE_EVALUATION",
+      "artifact_path": "backend/app/models/candidate_hgb_model.pkl"
+    }
+  ]
+}

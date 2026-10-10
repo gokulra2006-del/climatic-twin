@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-09-13T15:44:08.922970+00:00",
+  "prediction_drift": {
+    "window": "7d",
+    "status": "PREDICTION DRIFT DETECTED",
+    "severity": "HIGH",
+    "psi": 5.9678,
+    "ks_statistic": 0.2984,
+    "ks_pvalue": 0.5638,
+    "historical_median_prob": 0.0441,
+    "live_median_prob": 0.0649,
+    "historical_mean_prob": 0.0795,
+    "live_mean_prob": 0.0785,
+    "probability_shift": 0.0209,
+    "note": "Prediction drift reflects changing output probabilities. Does NOT imply model degradation without verified ground-truth labels."
+  },
+  "concept_drift": {
+    "status": "NOT YET EVALUABLE \u2014 LIVE GROUND-TRUTH LABELS UNAVAILABLE",
+    "evaluable": false,
+    "methodology": "Requires confirmed ground-truth flood inundation survey labels to evaluate relationship P(Y|X).",
+    "scientific_rationale": "Calculating concept drift from model predictions alone confuses feature/prediction drift with concept drift."
+  }
+}
