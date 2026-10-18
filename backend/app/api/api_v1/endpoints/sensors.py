@@ -56,14 +56,12 @@ def read_sensors(
             "total_pages": 1
         }
             
-    # Mock fallback (ONLY runs if DB is offline AND Raspberry Pi is not connected)
+    # There is no verified hardware inventory when both the database and Firebase
+    # are unavailable.  Returning an empty list is more honest than displaying a
+    # hard-coded station list as if it were operational infrastructure.
     return {
-        "data": [
-            {"id": 1, "name": "POONDI_INFLOW_STATION", "sensor_type_id": 1, "asset_id": 1, "is_active": True, "created_at": now},
-            {"id": 2, "name": "REDHILLS_LEVEL_SENSOR", "sensor_type_id": 1, "asset_id": 2, "is_active": True, "created_at": now},
-            {"id": 3, "name": "ADYAR_RIVER_GAUGE", "sensor_type_id": 2, "asset_id": 3, "is_active": True, "created_at": now}
-        ],
-        "total": 3,
+        "data": [],
+        "total": 0,
         "page": 1,
         "page_size": limit,
         "total_pages": 1
@@ -72,15 +70,22 @@ def read_sensors(
 
 @router.get("/live-network")
 def get_live_sensor_network():
-    """Returns live multi-station sensor data across 6 Chennai weather stations, synced from Open-Meteo."""
+    """Returns live city weather plus transparently labelled spatial estimates."""
     try:
         from app.core.satellite_ingestion import satellite_engine
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         
         sensor_network = sat_data.get("sensor_network", {})
         
+        telemetry_meta = sat_data.get("telemetry_meta", {})
         if not sensor_network:
-            return {"status": "OFFLINE", "stations": [], "total": 0}
+            return {
+                "status": telemetry_meta.get("mode", "UNAVAILABLE"),
+                "stations": [],
+                "total": 0,
+                "source": telemetry_meta.get("provider", "No provider available"),
+                "detail": telemetry_meta.get("message", "No live weather data is available.")
+            }
         
         stations = list(sensor_network.values())
         
@@ -90,7 +95,7 @@ def get_live_sensor_network():
         winds = [s["readings"]["wind_speed_kmh"] for s in stations]
         
         return {
-            "status": "LIVE",
+            "status": telemetry_meta.get("mode", "LIVE_WEATHER_API"),
             "total_stations": len(stations),
             "stations": stations,
             "aggregate": {
@@ -101,10 +106,12 @@ def get_live_sensor_network():
                 "max_rainfall_mm": round(max(rains), 1),
                 "avg_wind_kmh": round(sum(winds) / len(winds), 1),
                 "max_wind_kmh": round(max(winds), 1),
-                "all_stations_online": all(s["status"] == "ONLINE" for s in stations)
+                "all_stations_online": False
             },
-            "source": "Open-Meteo Live API (6 Virtual Weather Stations)",
-            "data_source_url": "https://api.open-meteo.com/v1/forecast?latitude=13.0827&longitude=80.2707"
+            "source": "Open-Meteo live city weather with derived spatial estimates",
+            "data_source_url": "https://api.open-meteo.com/v1/forecast?latitude=13.0827&longitude=80.2707",
+            "provenance": telemetry_meta,
+            "station_notice": "These are not six independent physical sensor feeds. Each location is an estimate derived from the live Chennai weather feed."
         }
     except Exception as e:
         return {"status": "ERROR", "detail": str(e), "stations": [], "total": 0}

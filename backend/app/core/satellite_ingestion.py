@@ -2,6 +2,7 @@ import os
 import requests
 import logging
 import threading
+import copy
 from datetime import datetime, timezone
 from typing import Dict, Any
 from dotenv import load_dotenv
@@ -67,24 +68,37 @@ class LiveTelemetryEngine:
             current = weather_res.get('current', {})
             hourly = weather_res.get('hourly', {})
             
-            temp = current.get('temperature_2m', 30.0)
-            app_temp = current.get('apparent_temperature', 35.0)
-            rh = current.get('relative_humidity_2m', 70)
-            wind = current.get('wind_speed_10m', 10.0)
-            rain = current.get('precipitation', 0.0)
-            
-            def get_latest(arr, default):
-                return next((x for x in reversed(arr) if x is not None), default)
+            # Do not silently turn an unavailable provider response into "live" data.
+            # These five values are the minimum observed weather inputs required by the
+            # live dashboards.  If any are absent, the caller receives an unavailable
+            # state instead of plausible-looking mock numbers.
+            required_current = (
+                'temperature_2m', 'apparent_temperature', 'relative_humidity_2m',
+                'wind_speed_10m', 'precipitation'
+            )
+            missing_current = [field for field in required_current if current.get(field) is None]
+            if missing_current:
+                logger.warning("Open-Meteo response missing required current fields: %s", missing_current)
+                return {}
 
-            soil_moist_surface = get_latest(hourly.get('soil_moisture_0_to_7cm', []), 0.2)
-            soil_moist_deep = get_latest(hourly.get('soil_moisture_28_to_100cm', []), 0.2)
-            soil_temp = get_latest(hourly.get('soil_temperature_0cm', []), temp + 3.0)
-            cape = get_latest(hourly.get('cape', []), 0.0)
+            temp = current['temperature_2m']
+            app_temp = current['apparent_temperature']
+            rh = current['relative_humidity_2m']
+            wind = current['wind_speed_10m']
+            rain = current['precipitation']
             
-            uv = get_latest(hourly.get('uv_index', []), 8.0)
-            solar_rad = get_latest(hourly.get('direct_radiation', []), 600.0)
-            cloud_cover = current.get('cloud_cover', 20)
-            vpd = get_latest(hourly.get('vapor_pressure_deficit', []), 1.5)
+            def get_latest(arr):
+                return next((x for x in reversed(arr) if x is not None), None)
+
+            soil_moist_surface = get_latest(hourly.get('soil_moisture_0_to_7cm', []))
+            soil_moist_deep = get_latest(hourly.get('soil_moisture_28_to_100cm', []))
+            soil_temp = get_latest(hourly.get('soil_temperature_0cm', []))
+            cape = get_latest(hourly.get('cape', []))
+            
+            uv = get_latest(hourly.get('uv_index', []))
+            solar_rad = get_latest(hourly.get('direct_radiation', []))
+            cloud_cover = current.get('cloud_cover')
+            vpd = get_latest(hourly.get('vapor_pressure_deficit', []))
             
             # 2. NASA FIRMS API (Active Fires)
             active_fire_count = 0
@@ -159,8 +173,8 @@ class LiveTelemetryEngine:
                     for i in range(0, min(len(h_times), 192), 24):
                         drought_trend.append({
                             "time": h_times[i],
-                            "surface_moisture": round(h_sm_surf[i] if i < len(h_sm_surf) and h_sm_surf[i] is not None else soil_moist_surface, 3),
-                            "root_zone_moisture": round(h_sm_deep[i] if i < len(h_sm_deep) and h_sm_deep[i] is not None else soil_moist_deep, 3),
+                            "surface_moisture": round(h_sm_surf[i], 3) if i < len(h_sm_surf) and h_sm_surf[i] is not None else None,
+                            "root_zone_moisture": round(h_sm_deep[i], 3) if i < len(h_sm_deep) and h_sm_deep[i] is not None else None,
                             "precipitation": round(h_precip[i] if i < len(h_precip) and h_precip[i] is not None else 0.0, 1)
                         })
             except Exception as e:
@@ -180,7 +194,7 @@ class LiveTelemetryEngine:
                 "active_fires_detected": active_fire_count,
                 "max_frp_mw": round(max_frp, 1),
                 "wind_speed_kmh": wind,
-                "source": "NASA FIRMS (VIIRS) & Open-Meteo",
+                "source": "NASA FIRMS (VIIRS) & Open-Meteo" if self.firms_key else "Open-Meteo fire-weather proxy (NASA FIRMS key not configured)",
                 "status": "LIVE_FETCHED"
             }
             
@@ -249,7 +263,9 @@ class LiveTelemetryEngine:
                 "status": "LIVE_FETCHED"
             }
             
-            # Phase 20: Compute Real-Time Multi-Sensor Stream for Chennai
+            # Spatial estimates are derived from one live weather API location, not
+            # independent physical stations.  Keep them available for research UI
+            # exploration, but make their provenance explicit.
             sensor_network = {}
             for s_id, s_info in CHENNAI_SENSOR_STATIONS.items():
                 # Micro-climatic variance around Chennai base readings
@@ -262,9 +278,8 @@ class LiveTelemetryEngine:
                 s_wind = round(max(0.5, wind + (1.5 if "Coast" in s_info["zone"] else 0.0)), 1)
                 s_sm_surf = round(soil_moist_surface * (1.1 if "Catchment" in s_info["name"] else 1.0), 3)
                 
-                # Sensor health diagnostics
-                status = "ONLINE"
-                quality_flag = "GOOD"
+                status = "DERIVED"
+                quality_flag = "ESTIMATED_FROM_CITY_WEATHER"
                 
                 sensor_network[s_id] = {
                     "station_id": s_id,
@@ -281,7 +296,8 @@ class LiveTelemetryEngine:
                     },
                     "status": status,
                     "quality_flag": quality_flag,
-                    "last_sync": datetime.now(timezone.utc).isoformat()
+                    "last_sync": datetime.now(timezone.utc).isoformat(),
+                    "source_mode": "DERIVED_SPATIAL_ESTIMATE"
                 }
 
             return {
@@ -291,7 +307,16 @@ class LiveTelemetryEngine:
                 "extreme_rainfall": ext_rain_data,
                 "flood": flood_data,
                 "sensor_network": sensor_network,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "telemetry_meta": {
+                    "mode": "LIVE_WEATHER_API",
+                    "provider": "Open-Meteo",
+                    "observed_at": current.get("time"),
+                    "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                    "weather_fields": "live provider observations/nowcasts",
+                    "reservoir_fields": "simulated from rainfall; no verified reservoir feed is connected",
+                    "station_network": "spatial estimates derived from the city weather feed; not physical station telemetry"
+                }
             }
             
         except Exception as e:
@@ -302,11 +327,28 @@ class LiveTelemetryEngine:
         with self._lock:
             now = datetime.now(timezone.utc)
             if "last_update" in self._cache and (now - self._cache["last_update"]).total_seconds() < 600:
-                return self._cache["data"]
+                return copy.deepcopy(self._cache["data"])
                 
             live_payload = self.fetch_live_data()
             if not live_payload:
-                return self._cache.get("data", {})
+                cached = self._cache.get("data")
+                if not cached:
+                    return {
+                        "telemetry_meta": {
+                            "mode": "UNAVAILABLE",
+                            "provider": "Open-Meteo",
+                            "message": "No live weather response or cache is available."
+                        }
+                    }
+                stale = copy.deepcopy(cached)
+                age = (now - self._cache["last_update"]).total_seconds()
+                stale["telemetry_meta"] = {
+                    **stale.get("telemetry_meta", {}),
+                    "mode": "STALE_CACHE",
+                    "cache_age_seconds": round(age),
+                    "message": "Live provider unavailable; displaying the last successful live-weather fetch."
+                }
+                return stale
                 
             self._cache["data"] = live_payload
             self._cache["last_update"] = now

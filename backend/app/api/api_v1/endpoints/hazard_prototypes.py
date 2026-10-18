@@ -97,21 +97,24 @@ def get_latest_heatwave() -> dict:
         from app.core.satellite_ingestion import satellite_engine
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         hw_live = sat_data.get('heatwave', {})
+        telemetry_meta = sat_data.get('telemetry_meta', {})
+        if not hw_live:
+            raise HTTPException(status_code=503, detail=telemetry_meta.get("message", "Live weather telemetry is unavailable."))
         
         # Use ONLY Live Data
         temp_max_latest = hw_live.get('air_temp_c', 35.0)
         apparent_temp = hw_live.get('apparent_temp_c', 36.0)
         humidity = hw_live.get('humidity_percent', 65.0)
-        lst = hw_live.get('lst_celsius', temp_max_latest)
-        uv = hw_live.get('uv_index', 8.0)
-        solar_rad = hw_live.get('solar_radiation_wm2', 600.0)
-        cloud = hw_live.get('cloud_cover_percent', 20.0)
-        vpd = hw_live.get('vapor_pressure_deficit_kpa', 1.5)
-        wind = hw_live.get('wind_speed_kmh', 10.0)
+        lst = hw_live.get('lst_celsius')
+        uv = hw_live.get('uv_index')
+        solar_rad = hw_live.get('solar_radiation_wm2')
+        cloud = hw_live.get('cloud_cover_percent')
+        vpd = hw_live.get('vapor_pressure_deficit_kpa')
+        wind = hw_live.get('wind_speed_kmh')
         
         prob = _calc_heatwave_prob(apparent_temp, temp_max_latest, humidity)
-        if uv > 8.0: prob += 0.1
-        if vpd > 2.0: prob += 0.1
+        if uv is not None and uv > 8.0: prob += 0.1
+        if vpd is not None and vpd > 2.0: prob += 0.1
         prob = min(1.0, prob)
         p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
         
@@ -158,7 +161,7 @@ def get_latest_heatwave() -> dict:
             "lead_time_hours": 24,
             "lead_time_text": "Live Observation Warning",
             "thresholds_disclaimer": "Live Real-Time Heat Index & LST Model",
-            "contributing_features": {
+            "contributing_features": {k: v for k, v in {
                 "Apparent Temp (°C)": apparent_temp,
                 "Air Temp (°C)": temp_max_latest,
                 "Surface LST (°C)": lst,
@@ -168,10 +171,11 @@ def get_latest_heatwave() -> dict:
                 "Cloud Cover (%)": cloud,
                 "Vapor Pressure Deficit (kPa)": vpd,
                 "Wind Speed (km/h)": wind
-            },
+            }.items() if v is not None},
             "timestamp": datetime.now(timezone.utc),
             "data_source": hw_live.get("source", "Live Open-Meteo"),
-            "simulation_label": "LIVE TELEMETRY",
+            "simulation_label": "LIVE WEATHER + DERIVED RISK MODEL",
+            "telemetry_mode": telemetry_meta.get("mode", "LIVE_WEATHER_API"),
             "forecast_metrics": {
                 "peak_temp": peak_temp,
                 "peak_heat_index": peak_heat_index,
@@ -204,6 +208,9 @@ def get_latest_drought() -> dict:
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         dr_live = sat_data.get('drought', {})
         flood_live = sat_data.get('flood', {})
+        telemetry_meta = sat_data.get('telemetry_meta', {})
+        if not dr_live or not flood_live:
+            raise HTTPException(status_code=503, detail=telemetry_meta.get("message", "Live weather telemetry is unavailable."))
         
         soil_moisture_surface = dr_live.get('soil_moisture_surface', 0.22)
         soil_moisture_rz = dr_live.get('soil_moisture_root_zone', 0.24)
@@ -268,8 +275,9 @@ def get_latest_drought() -> dict:
             "reservoirs": reservoirs_breakdown,
             "trend_7d": trend_7d,
             "timestamp": datetime.now(timezone.utc),
-            "data_source": "Live Copernicus/NOAA (Soil Moisture) & CMWSSB Reservoir Model",
-            "simulation_label": "LIVE TELEMETRY"
+            "data_source": "Open-Meteo weather-derived soil fields + simulated CMWSSB reservoir model",
+            "simulation_label": "LIVE WEATHER + DERIVED DROUGHT MODEL",
+            "telemetry_mode": telemetry_meta.get("mode", "LIVE_WEATHER_API")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Drought calculation failed: {str(e)}")
@@ -289,6 +297,9 @@ def get_latest_wildfire() -> dict:
         from app.core.satellite_ingestion import satellite_engine
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         wf_live = sat_data.get('wildfire', {})
+        telemetry_meta = sat_data.get('telemetry_meta', {})
+        if not wf_live:
+            raise HTTPException(status_code=503, detail=telemetry_meta.get("message", "Live weather telemetry is unavailable."))
         
         fwi = wf_live.get('fwi_estimate', 5.0)
         wind = wf_live.get('wind_speed_kmh', 10.0)
@@ -318,7 +329,8 @@ def get_latest_wildfire() -> dict:
             },
             "timestamp": datetime.now(timezone.utc),
             "data_source": wf_live.get("source", "Live Open-Meteo"),
-            "simulation_label": "LIVE TELEMETRY"
+            "simulation_label": "LIVE WEATHER + FIRE-WEATHER PROXY",
+            "telemetry_mode": telemetry_meta.get("mode", "LIVE_WEATHER_API")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Wildfire calculation failed: {str(e)}")
@@ -337,6 +349,9 @@ def get_latest_extreme_rainfall() -> dict:
         from app.core.satellite_ingestion import satellite_engine
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         er_live = sat_data.get('extreme_rainfall', {})
+        telemetry_meta = sat_data.get('telemetry_meta', {})
+        if not er_live:
+            raise HTTPException(status_code=503, detail=telemetry_meta.get("message", "Live weather telemetry is unavailable."))
         
         cape = er_live.get('cape_j_kg', 0.0)
         rain = er_live.get('current_precip_mm', 0.0)
@@ -360,7 +375,8 @@ def get_latest_extreme_rainfall() -> dict:
             },
             "timestamp": datetime.now(timezone.utc),
             "data_source": er_live.get("source", "Live Open-Meteo"),
-            "simulation_label": "LIVE TELEMETRY"
+            "simulation_label": "LIVE WEATHER + CONVECTIVE PROXY",
+            "telemetry_mode": telemetry_meta.get("mode", "LIVE_WEATHER_API")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extreme Rainfall calculation failed: {str(e)}")

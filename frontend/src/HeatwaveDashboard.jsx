@@ -54,6 +54,9 @@ export default function HeatwaveDashboard({ latestPred, forecastData, dataQualit
   const features = latestPred?.contributing_features || {};
   const forecastMetrics = latestPred?.forecast_metrics || {};
   const trend48h = latestPred?.trend_48h || [];
+  const telemetryMode = latestPred?.telemetry_mode || (isApiFailed ? 'UNAVAILABLE' : 'LIVE_WEATHER_API');
+  const isLiveWeather = telemetryMode === 'LIVE_WEATHER_API';
+  const sourceLabel = latestPred?.data_source || 'No live source available';
 
   const getFeature = (namePart) => {
     if (!features) return null;
@@ -147,8 +150,8 @@ export default function HeatwaveDashboard({ latestPred, forecastData, dataQualit
              HEATWAVE DIGITAL TWIN
           </h1>
           <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            LIVE • Updated {Math.floor((Date.now() - lastUpdated)/60000)} min ago
+            <span className={`w-2 h-2 rounded-full ${isLiveWeather ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`}></span>
+            {isLiveWeather ? 'LIVE WEATHER API' : telemetryMode.replaceAll('_', ' ')} • Updated {Math.floor((Date.now() - lastUpdated)/60000)} min ago
           </p>
         </div>
         <button 
@@ -176,10 +179,10 @@ export default function HeatwaveDashboard({ latestPred, forecastData, dataQualit
           </div>
           <div className="flex flex-col items-end gap-1">
              <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                LIVE DATA
+                <span className={`w-2 h-2 rounded-full ${isLiveWeather ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`}></span>
+                {isLiveWeather ? 'LIVE WEATHER DATA' : 'SOURCE CHECK REQUIRED'}
              </div>
-             <p className="text-[10px] text-slate-500 font-mono">Open-Meteo • Updated {Math.floor((Date.now() - lastUpdated)/60000)} min ago • STATUS: FRESH</p>
+             <p className="text-[10px] text-slate-500 font-mono">{sourceLabel} • Updated {Math.floor((Date.now() - lastUpdated)/60000)} min ago</p>
           </div>
         </div>
 
@@ -222,14 +225,14 @@ export default function HeatwaveDashboard({ latestPred, forecastData, dataQualit
 
       {/* 8-CARD TELEMETRY GRID */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard title="TEMPERATURE" value={airTemp} unit="°C" icon={<Thermometer className="w-4 h-4 text-rose-500" />} />
-        <MetricCard title="FEELS LIKE" value={heatIndex} unit="°C" icon={<Activity className="w-4 h-4 text-orange-500" />} />
-        <MetricCard title="HUMIDITY" value={humidity} unit="%" icon={<Droplets className="w-4 h-4 text-blue-500" />} />
-        <MetricCard title="DEW POINT" value={dewPoint} unit="°C" icon={<CloudLightning className="w-4 h-4 text-indigo-500" />} />
-        <MetricCard title="WIND" value={windSpeed} unit="km/h" icon={<Wind className="w-4 h-4 text-teal-500" />} />
-        <MetricCard title="PRECIPITATION" value={precip || 0.0} unit="mm" icon={<CloudLightning className="w-4 h-4 text-slate-500" />} />
-        <MetricCard title="UV / SOLAR" value={uv || 8.0} unit="Idx" icon={<Sun className="w-4 h-4 text-amber-500" />} />
-        <MetricCard title="HEAT INDEX" value={heatIndex} unit="°C" icon={<Activity className="w-4 h-4 text-red-500" />} />
+        <MetricCard title="TEMPERATURE" value={airTemp} unit="°C" live={isLiveWeather} icon={<Thermometer className="w-4 h-4 text-rose-500" />} />
+        <MetricCard title="FEELS LIKE" value={heatIndex} unit="°C" live={isLiveWeather} icon={<Activity className="w-4 h-4 text-orange-500" />} />
+        <MetricCard title="HUMIDITY" value={humidity} unit="%" live={isLiveWeather} icon={<Droplets className="w-4 h-4 text-blue-500" />} />
+        <MetricCard title="DEW POINT" value={dewPoint} unit="°C" live={isLiveWeather} icon={<CloudLightning className="w-4 h-4 text-indigo-500" />} />
+        <MetricCard title="WIND" value={windSpeed} unit="km/h" live={isLiveWeather} icon={<Wind className="w-4 h-4 text-teal-500" />} />
+        <MetricCard title="PRECIPITATION" value={precip} unit="mm" live={isLiveWeather} icon={<CloudLightning className="w-4 h-4 text-slate-500" />} />
+        <MetricCard title="UV / SOLAR" value={uv} unit="Idx" live={isLiveWeather} icon={<Sun className="w-4 h-4 text-amber-500" />} />
+        <MetricCard title="HEAT INDEX" value={heatIndex} unit="°C" live={isLiveWeather} icon={<Activity className="w-4 h-4 text-red-500" />} />
       </div>
 
       {/* TREND CHART */}
@@ -321,9 +324,9 @@ export default function HeatwaveDashboard({ latestPred, forecastData, dataQualit
              <MapPin className="w-3 h-3" /> DATA PROVENANCE
            </h2>
            <div className="grid grid-cols-2 gap-y-2">
-             <div className="font-bold">Source:</div><div>Open-Meteo API</div>
+             <div className="font-bold">Source:</div><div>{sourceLabel}</div>
              <div className="font-bold">Location:</div><div>Chennai (13.08°N, 80.27°E)</div>
-             <div className="font-bold">Data:</div><div>Live weather API</div>
+             <div className="font-bold">Data:</div><div>{latestPred?.simulation_label || telemetryMode.replaceAll('_', ' ')}</div>
              <div className="font-bold">Updated:</div><div>{formatTimeStr(latestPred?.timestamp)}</div>
              <div className="font-bold">Derived:</div><div>Heat Index, Risk Model, AI Forecast</div>
            </div>
@@ -477,7 +480,7 @@ export default function HeatwaveDashboard({ latestPred, forecastData, dataQualit
   );
 }
 
-function MetricCard({ title, value, unit, icon }) {
+function MetricCard({ title, value, unit, icon, live }) {
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between hover:border-indigo-200 transition-colors">
       <div className="flex justify-between items-start mb-2">
@@ -489,8 +492,8 @@ function MetricCard({ title, value, unit, icon }) {
         <span className="text-xs text-slate-500 font-bold ml-1">{unit}</span>
       </div>
       <div className="mt-2 flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">LIVE</span>
+        <span className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`}></span>
+        <span className={`text-[9px] font-bold uppercase tracking-widest ${live ? 'text-emerald-600' : 'text-amber-700'}`}>{live ? 'LIVE' : 'UNAVAILABLE'}</span>
       </div>
     </div>
   );
