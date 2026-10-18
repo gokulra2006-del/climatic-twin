@@ -1,9 +1,10 @@
 import os
+import json
 import requests
 import logging
 import threading
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 from dotenv import load_dotenv
 
@@ -36,6 +37,95 @@ class LiveTelemetryEngine:
         self._cache = {}
         self._lock = threading.Lock()
         self.firms_key = os.getenv("NASA_FIRMS_KEY", "")
+        backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        self.history_path = os.getenv("LIVE_WEATHER_HISTORY_PATH", os.path.join(backend_root, "data", "runtime", "live_weather_history.json"))
+
+    def _read_weather_history(self) -> list[Dict[str, Any]]:
+        try:
+            if not os.path.exists(self.history_path):
+                return []
+            with open(self.history_path, "r", encoding="utf-8") as history_file:
+                saved = json.load(history_file)
+            return saved if isinstance(saved, list) else []
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("Could not read local weather backup: %s", exc)
+            return []
+
+    def _upsert_weather_history(self, records: list[Dict[str, Any]]) -> None:
+        """Save provider observations locally with their source and observation time."""
+        if not records:
+            return
+        try:
+            rows = {(item.get("observed_at"), item.get("source")): item for item in self._read_weather_history() if item.get("observed_at")}
+            for record in records:
+                rows[(record["observed_at"], record["source"])] = record
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).date().isoformat()
+            retained = [item for item in rows.values() if item["observed_at"][:10] >= cutoff]
+            retained.sort(key=lambda item: item["observed_at"])
+            os.makedirs(os.path.dirname(self.history_path), exist_ok=True)
+            temporary_path = f"{self.history_path}.tmp"
+            with open(temporary_path, "w", encoding="utf-8") as history_file:
+                json.dump(retained, history_file, ensure_ascii=False, separators=(",", ":"))
+            os.replace(temporary_path, self.history_path)
+        except OSError as exc:
+            logger.warning("Could not save local weather backup: %s", exc)
+
+    @staticmethod
+    def _mean(values: list[Any]) -> float | None:
+        numeric = [float(value) for value in values if value is not None]
+        return round(sum(numeric) / len(numeric), 2) if numeric else None
+
+    def get_weather_backup_analysis(self, days: int = 7) -> Dict[str, Any]:
+        """Compare saved weather observations for today and yesterday at the same hour."""
+        self.get_latest_satellite_telemetry()
+        records = self._read_weather_history()
+        if not records:
+            return {"status": "UNAVAILABLE", "message": "No provider weather observations have been saved locally yet.", "daily": []}
+        days = max(2, min(days, 30))
+        latest_at = max(str(item["observed_at"]) for item in records)
+        latest_day, latest_hour = latest_at[:10], latest_at[11:13]
+        start_day = (datetime.fromisoformat(latest_day).date() - timedelta(days=days - 1)).isoformat()
+        observed = [item for item in records if start_day <= item["observed_at"][:10] <= latest_day]
+        by_day: Dict[str, list[Dict[str, Any]]] = {}
+        for item in observed:
+            by_day.setdefault(item["observed_at"][:10], []).append(item)
+
+        def summarize(rows: list[Dict[str, Any]]) -> Dict[str, Any]:
+            return {
+                "hours": len(rows),
+                "temperature_mean_c": self._mean([row.get("temperature_c") for row in rows]),
+                "temperature_max_c": max((row["temperature_c"] for row in rows if row.get("temperature_c") is not None), default=None),
+                "apparent_temperature_mean_c": self._mean([row.get("apparent_temperature_c") for row in rows]),
+                "humidity_mean_pct": self._mean([row.get("humidity_pct") for row in rows]),
+                "rainfall_total_mm": round(sum(float(row.get("precipitation_mm") or 0) for row in rows), 2),
+                "wind_mean_kmh": self._mean([row.get("wind_speed_kmh") for row in rows]),
+            }
+
+        daily = [{"date": day, **summarize(rows)} for day, rows in sorted(by_day.items())]
+        today_rows = [row for row in by_day.get(latest_day, []) if row["observed_at"][11:13] <= latest_hour]
+        yesterday_day = (datetime.fromisoformat(latest_day).date() - timedelta(days=1)).isoformat()
+        yesterday_rows = [row for row in by_day.get(yesterday_day, []) if row["observed_at"][11:13] <= latest_hour]
+        today, yesterday = summarize(today_rows), summarize(yesterday_rows)
+        def delta(name: str) -> float | None:
+            return round(today[name] - yesterday[name], 2) if today.get(name) is not None and yesterday.get(name) is not None else None
+        comparison = {
+            "compared_through_hour": f"{latest_hour}:00",
+            "temperature_mean_delta_c": delta("temperature_mean_c"),
+            "apparent_temperature_mean_delta_c": delta("apparent_temperature_mean_c"),
+            "humidity_mean_delta_pct": delta("humidity_mean_pct"),
+            "rainfall_delta_mm": delta("rainfall_total_mm"),
+            "wind_mean_delta_kmh": delta("wind_mean_kmh"),
+        }
+        temp_delta, rain_delta = comparison["temperature_mean_delta_c"], comparison["rainfall_delta_mm"]
+        analysis = "Insufficient same-time observations for a yesterday comparison."
+        if temp_delta is not None and rain_delta is not None:
+            analysis = f"Today so far is {abs(temp_delta):.1f}°C {'warmer' if temp_delta >= 0 else 'cooler'} and {abs(rain_delta):.1f} mm {'wetter' if rain_delta >= 0 else 'drier'} than yesterday at the same hour."
+        return {
+            "status": "BACKUP_AVAILABLE", "source": "Local backup of Open-Meteo hourly weather observations", "retention_days": 90,
+            "records_saved": len(records), "latest_observation_at": latest_at, "daily": daily,
+            "today_to_now": today, "yesterday_same_time": yesterday, "comparison": comparison, "analysis": analysis,
+            "boundary": "Provider observation history only; forecast hours and simulated reservoir values are excluded."
+        }
         
     def fetch_live_data(self) -> Dict[str, Any]:
         try:
@@ -62,7 +152,7 @@ class LiveTelemetryEngine:
                 }
 
             # 1. Main Weather (Open-Meteo Fallback)
-            weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,dew_point_2m&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation,rain,soil_temperature_0cm,soil_moisture_0_to_7cm,soil_moisture_28_to_100cm,cape,uv_index,direct_radiation,vapor_pressure_deficit&timezone=Asia%2FKolkata&past_hours=168"
+            weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,dew_point_2m&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation,rain,wind_speed_10m,soil_temperature_0cm,soil_moisture_0_to_7cm,soil_moisture_28_to_100cm,cape,uv_index,direct_radiation,vapor_pressure_deficit&timezone=Asia%2FKolkata&past_hours=168"
             weather_res = requests.get(weather_url, timeout=10).json()
             
             current = weather_res.get('current', {})
@@ -99,6 +189,29 @@ class LiveTelemetryEngine:
             solar_rad = get_latest(hourly.get('direct_radiation', []))
             cloud_cover = current.get('cloud_cover')
             vpd = get_latest(hourly.get('vapor_pressure_deficit', []))
+
+            # Save only provider hours at or before the current observation time.
+            # Later hours are forecasts and are deliberately excluded from backup.
+            observed_at = current.get("time")
+            hourly_times = hourly.get("time", [])
+            def hourly_value(field: str, index: int):
+                values = hourly.get(field, [])
+                return values[index] if index < len(values) else None
+            backup_records = []
+            for index, time_value in enumerate(hourly_times):
+                if observed_at and time_value > observed_at:
+                    continue
+                backup_records.append({
+                    "observed_at": time_value,
+                    "source": "Open-Meteo hourly weather archive",
+                    "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                    "temperature_c": hourly_value("temperature_2m", index),
+                    "apparent_temperature_c": hourly_value("apparent_temperature", index),
+                    "humidity_pct": hourly_value("relative_humidity_2m", index),
+                    "precipitation_mm": hourly_value("precipitation", index),
+                    "wind_speed_kmh": hourly_value("wind_speed_10m", index),
+                })
+            self._upsert_weather_history(backup_records)
             
             # 2. NASA FIRMS API (Active Fires)
             active_fire_count = None

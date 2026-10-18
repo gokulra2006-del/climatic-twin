@@ -2034,6 +2034,7 @@ function App() {
               loading={loading}
               onRefresh={() => fetchDashboardData('HEATWAVE')}
               explainabilityData={explainabilityData}
+              apiUrl={API_URL}
             />
           ) : selectedHazard === 'DROUGHT' ? (
             <DroughtDashboard 

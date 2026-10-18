@@ -5,12 +5,14 @@ import {
   MapPin, Info, CloudLightning
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-export default function HeatwaveDashboard({ latestPred, forecastData, dataQuality, loading, onRefresh, explainabilityData }) {
+export default function HeatwaveDashboard({ latestPred, forecastData, dataQuality, loading, onRefresh, explainabilityData, apiUrl }) {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSummaryGenerated, setIsSummaryGenerated] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(Date.now());
+  const [historyReport, setHistoryReport] = useState(null);
+  const [historyError, setHistoryError] = useState(null);
 
   // Auto-refresh every 10 minutes
   useEffect(() => {
@@ -23,6 +25,25 @@ export default function HeatwaveDashboard({ latestPred, forecastData, dataQualit
   useEffect(() => {
     if(latestPred) setLastUpdated(Date.now());
   }, [latestPred]);
+
+  useEffect(() => {
+    let active = true;
+    const loadHistory = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/api/weather/backup-analysis?days=7`);
+        if (!response.ok) throw new Error(`Weather history request failed (${response.status})`);
+        const report = await response.json();
+        if (active) {
+          setHistoryReport(report);
+          setHistoryError(null);
+        }
+      } catch (error) {
+        if (active) setHistoryError('Local weather backup is not available yet.');
+      }
+    };
+    if (apiUrl) loadHistory();
+    return () => { active = false; };
+  }, [apiUrl, latestPred?.timestamp]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -234,6 +255,34 @@ export default function HeatwaveDashboard({ latestPred, forecastData, dataQualit
         <MetricCard title="UV / SOLAR" value={uv} unit="Idx" live={isLiveWeather} icon={<Sun className="w-4 h-4 text-amber-500" />} />
         <MetricCard title="HEAT INDEX" value={heatIndex} unit="°C" live={isLiveWeather} icon={<Activity className="w-4 h-4 text-red-500" />} />
       </div>
+
+      <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-5" aria-labelledby="weather-history-title">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+          <div>
+            <h2 id="weather-history-title" className="text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-2">
+              <Database className="w-4 h-4 text-indigo-500" /> Weather Backup & Yesterday Comparison
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Local backup of observed provider hours. Forecast hours are excluded.</p>
+          </div>
+          <span className={`text-[10px] font-bold px-2 py-1 rounded border ${historyReport?.status === 'BACKUP_AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+            {historyReport?.status === 'BACKUP_AVAILABLE' ? `${historyReport.records_saved} SAVED HOURS` : 'BACKUP INITIALISING'}
+          </span>
+        </div>
+        {historyReport?.status === 'BACKUP_AVAILABLE' ? (
+          <>
+            <p className="text-sm text-slate-700 bg-indigo-50 border border-indigo-100 rounded-lg p-3 mb-4">{historyReport.analysis}</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <ComparisonMetric label="Mean temperature" value={historyReport.comparison?.temperature_mean_delta_c} unit="°C" />
+              <ComparisonMetric label="Apparent temperature" value={historyReport.comparison?.apparent_temperature_mean_delta_c} unit="°C" />
+              <ComparisonMetric label="Humidity" value={historyReport.comparison?.humidity_mean_delta_pct} unit=" pp" />
+              <ComparisonMetric label="Rainfall" value={historyReport.comparison?.rainfall_delta_mm} unit=" mm" />
+            </div>
+            <p className="text-[10px] text-slate-500 mt-4">Compared through {historyReport.comparison?.compared_through_hour}; retained locally for {historyReport.retention_days} days. {historyReport.boundary}</p>
+          </>
+        ) : (
+          <p className="text-sm text-slate-500">{historyError || historyReport?.message || 'Saving the first weather observations now. Refresh once the provider response is available.'}</p>
+        )}
+      </section>
 
       {/* TREND CHART */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -495,6 +544,19 @@ function MetricCard({ title, value, unit, icon, live }) {
         <span className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`}></span>
         <span className={`text-[9px] font-bold uppercase tracking-widest ${live ? 'text-emerald-600' : 'text-amber-700'}`}>{live ? 'LIVE' : 'UNAVAILABLE'}</span>
       </div>
+    </div>
+  );
+}
+
+function ComparisonMetric({ label, value, unit }) {
+  const available = value !== null && value !== undefined;
+  const signed = available ? `${value > 0 ? '+' : ''}${Number(value).toFixed(1)}` : '--';
+  const tone = !available ? 'text-slate-500' : value > 0 ? 'text-rose-600' : value < 0 ? 'text-sky-600' : 'text-slate-700';
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`text-xl font-black mt-1 ${tone}`}>{signed}<span className="text-xs ml-1">{unit}</span></p>
+      <p className="text-[10px] text-slate-500 mt-1">today vs yesterday</p>
     </div>
   );
 }
