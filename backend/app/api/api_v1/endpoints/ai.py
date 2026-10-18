@@ -13,8 +13,10 @@ from app.core.nova_copilot import nova_copilot
 
 from app.api.api_v1.endpoints.predictions import get_model
 import numpy as np
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class CopilotQuestion(BaseModel):
@@ -35,19 +37,23 @@ def get_ai_command_summary(hazard: str = "FLOOD"):
     features_arr = np.array(features).reshape(1, -1)
     
     model_data = get_model()
-    flood_prob = 0.0
+    flood_prob = None
+    flood_model_status = "UNAVAILABLE"
     if model_data is not None:
         try:
             model = model_data["model"]
             flood_prob = float(model.predict_proba(features_arr)[0, 1])
-        except Exception:
-            flood_prob = 0.4
+            flood_model_status = "AVAILABLE"
+        except Exception as exc:
+            logger.warning("NOVA could not evaluate the flood model: %s", exc)
             
     mh_engine = MultiHazardRiskEngine()
-    mh_result = mh_engine.calculate_compound_risk(env_state, flood_prob=flood_prob)
+    # Keep the compound-risk engine operational when the model artifact is not
+    # available, but never present an invented numeric probability as a result.
+    mh_result = mh_engine.calculate_compound_risk(env_state, flood_prob=flood_prob or 0.0)
     
     # Extract specific hazards
-    raw_hazards = mh_engine.normalize_hazard_states(env_state, flood_prob)
+    raw_hazards = mh_engine.normalize_hazard_states(env_state, flood_prob or 0.0)
     
     target = hazard.upper()
     override_hazard = None
@@ -148,7 +154,8 @@ def get_ai_command_summary(hazard: str = "FLOOD"):
         
     what_changed = [
         f"Latest telemetry health is {data_trust['score'] * 100:.0f}% ({data_trust['status']}).",
-        f"Flood-model probability is {flood_prob * 100:.1f}% (shown for context).",
+        (f"Flood-model probability is {flood_prob * 100:.1f}% (shown for context)."
+         if flood_prob is not None else "Flood-model probability is unavailable; NOVA is not substituting a fallback value."),
         "Asset prioritisation is a prototype screening result, not a verified field-impact record."
     ]
 
@@ -174,6 +181,17 @@ def get_ai_command_summary(hazard: str = "FLOOD"):
             "evidence_boundary": "Prototype decision support. It does not replace an official warning, field verification, or emergency authority."
         },
         "method_note": "NOVA organises existing model and telemetry outputs; it does not generate an independent forecast or validate impacts."
+        ,"source_ledger": {
+            "telemetry": "Current telemetry and quality summary",
+            "flood_model": flood_model_status,
+            "asset_priority": "Prototype screening result — requires field verification",
+            "ai_mode": nova_copilot.provider_status()["provider"],
+        },
+        "recommended_checks": [
+            "Refresh telemetry before escalating an operational action.",
+            "Verify any reported impact with an authorised field or agency source.",
+            "Record the operator decision and review time in the audit workflow.",
+        ],
     }
 
 
