@@ -627,6 +627,50 @@ def predict_realtime(payload: PredictInput):
         "timestamp": datetime.now()
     }
 
+
+def _live_weather_flood_proxy(flood_live: Dict[str, Any]) -> Dict[str, Any]:
+    """Provide a transparent weather-driven proxy when trained weights are absent.
+
+    This keeps the UI functional but never calls the result a trained, validated
+    flood forecast.  Reservoir values remain explicitly simulated.
+    """
+    rainfall_daily = float(flood_live["rainfall_daily"])
+    rainfall_3d = float(flood_live["rainfall_3d_sum"])
+    rainfall_7d = float(flood_live["rainfall_7d_sum"])
+    reservoir_total = float(flood_live["total_reservoir_level"])
+    reservoir_fraction = min(1.0, max(0.0, reservoir_total / 11257.0))
+    rainfall_pressure = min(
+        1.0,
+        (rainfall_daily / 100.0) * 0.45
+        + (rainfall_3d / 180.0) * 0.30
+        + (rainfall_7d / 300.0) * 0.25,
+    )
+    probability = min(0.95, max(0.0, rainfall_pressure * 0.75 + reservoir_fraction * 0.25))
+    uncertainty = 0.20
+    return {
+        "predicted_state": int(probability >= 0.50),
+        "probability": round(probability, 4),
+        "probability_p10": round(max(0.0, probability - uncertainty), 4),
+        "probability_p50": round(probability, 4),
+        "probability_p90": round(min(1.0, probability + uncertainty), 4),
+        "risk_level": map_risk_level(probability),
+        "lead_time_hours": None,
+        "lead_time_text": "No validated lead time is available for this proxy.",
+        "thresholds_disclaimer": "UNVALIDATED LIVE-WEATHER FLOOD PROXY: weather is live, reservoir storage is simulated, and trained flood-model weights are not installed. Do not use for emergency decisions.",
+        "contributing_features": {
+            "Live rainfall pressure": round(rainfall_pressure, 4),
+            "Simulated reservoir fraction": round(reservoir_fraction, 4),
+        },
+        "data_source": flood_live.get("source", "Live Open-Meteo weather + simulated reservoirs"),
+        "simulation_label": "LIVE WEATHER + UNVALIDATED FLOOD PROXY",
+        "assimilated_features": {
+            "rainfall_daily": rainfall_daily,
+            "rainfall_3d_sum": rainfall_3d,
+            "rainfall_7d_sum": rainfall_7d,
+            "total_reservoir_level": reservoir_total,
+        },
+    }
+
 @router.get("/latest", response_model=RealtimePredictionResponse)
 def get_latest_prediction():
     # PRIMARY: Use live telemetry from Open-Meteo (same pattern as heatwave/drought/wildfire)
@@ -652,9 +696,15 @@ def get_latest_prediction():
                 CHEMBARAMBAKKAM=float(flood_live['CHEMBARAMBAKKAM']),
                 total_reservoir_level=float(flood_live['total_reservoir_level'])
             )
-            res = predict_realtime(payload)
+            try:
+                res = predict_realtime(payload)
+            except HTTPException as exc:
+                if exc.status_code != 503:
+                    raise
+                logger.warning("Flood model weights unavailable; using transparent live-weather proxy.")
+                return _live_weather_flood_proxy(flood_live)
             res["data_source"] = flood_live.get("source", "Live Open-Meteo")
-            res["simulation_label"] = "LIVE TELEMETRY"
+            res["simulation_label"] = "LIVE WEATHER + TRAINED FLOOD MODEL"
             return res
     except Exception as e:
         logger.warning(f"Live flood telemetry failed, falling back to CSV: {e}")
@@ -697,27 +747,10 @@ def get_latest_prediction():
         res["simulation_label"] = "HISTORICAL CSV FALLBACK"
         return res
     except Exception as e:
-        payload = PredictInput(
-            rainfall_daily=45.2,
-            rainfall_3d_sum=98.1,
-            rainfall_5d_sum=120.4,
-            rainfall_7d_sum=150.0,
-            temp_mean=26.5,
-            temp_max=31.2,
-            temp_min=24.1,
-            dew_point_mean=23.5,
-            wind_speed_mean=3.4,
-            POONDI=2800.0,
-            CHOLAVARAM=900.0,
-            REDHILLS=2900.0,
-            CHEMBARAMBAKKAM=3100.0,
-            total_reservoir_level=9700.0
-        )
-        res = predict_realtime(payload)
-        res["data_source"] = "Demo Fallback Values"
-        res["simulation_label"] = "DEMO FALLBACK"
-        res["thresholds_disclaimer"] += " (Computed using DEMO fallback values due to dataset loading failure: " + str(e) + ")"
-        return res
+        raise HTTPException(
+            status_code=503,
+            detail="No live weather feed, compatible historical dataset, or trained flood model is available. No demonstration values were substituted."
+        ) from e
 
 
 @router.get("/", response_model=PaginatedResponse[PredictionResponse])

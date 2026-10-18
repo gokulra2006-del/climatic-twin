@@ -304,10 +304,11 @@ def get_latest_wildfire() -> dict:
         fwi = wf_live.get('fwi_estimate', 5.0)
         wind = wf_live.get('wind_speed_kmh', 10.0)
         surface_temp = wf_live.get('surface_temp_c', 30.0)
-        active_fires = wf_live.get('active_fires_detected', 0)
-        max_frp = wf_live.get('max_frp_mw', 0.0)
+        active_fires = wf_live.get('active_fires_detected')
+        max_frp = wf_live.get('max_frp_mw')
         
-        prob = _calc_wildfire_prob(fwi, wind, active_fires)
+        # An unavailable NASA FIRMS feed is not evidence of zero hotspots.
+        prob = _calc_wildfire_prob(fwi, wind, active_fires or 0)
         p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
         
         return {
@@ -318,15 +319,15 @@ def get_latest_wildfire() -> dict:
             "probability_p90": p90,
             "risk_level": map_risk_level_generic(prob),
             "lead_time_hours": 48,
-            "lead_time_text": "Live FWI Proxy Warning",
-            "thresholds_disclaimer": "Live Fire Weather Index (FWI) Evaluation",
-            "contributing_features": {
+            "lead_time_text": "Live weather-derived fire-risk proxy",
+            "thresholds_disclaimer": "Weather-derived fire-risk proxy. Hotspot evidence is shown only when NASA FIRMS is configured and returns a response.",
+            "contributing_features": {k: v for k, v in {
                 "Fire Weather Index (FWI)": fwi,
                 "NASA Active Hotspots (VIIRS)": active_fires,
                 "Max Fire Radiative Power (MW)": max_frp,
                 "Wind Speed (km/h)": wind,
                 "Surface Temp (°C)": surface_temp
-            },
+            }.items() if v is not None},
             "timestamp": datetime.now(timezone.utc),
             "data_source": wf_live.get("source", "Live Open-Meteo"),
             "simulation_label": "LIVE WEATHER + FIRE-WEATHER PROXY",

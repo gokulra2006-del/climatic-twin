@@ -101,10 +101,12 @@ class LiveTelemetryEngine:
             vpd = get_latest(hourly.get('vapor_pressure_deficit', []))
             
             # 2. NASA FIRMS API (Active Fires)
-            active_fire_count = 0
-            max_frp = 0.0
+            active_fire_count = None
+            max_frp = None
             
             if self.firms_key:
+                active_fire_count = 0
+                max_frp = 0.0
                 try:
                     # Check VIIRS SNPP for the last 1 day
                     firms_url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{self.firms_key}/VIIRS_SNPP_NRT/{CHENNAI_BBOX}/1"
@@ -192,7 +194,7 @@ class LiveTelemetryEngine:
             wildfire_data = {
                 "fwi_estimate": round(fwi_proxy, 2),
                 "active_fires_detected": active_fire_count,
-                "max_frp_mw": round(max_frp, 1),
+                "max_frp_mw": round(max_frp, 1) if max_frp is not None else None,
                 "wind_speed_kmh": wind,
                 "source": "NASA FIRMS (VIIRS) & Open-Meteo" if self.firms_key else "Open-Meteo fire-weather proxy (NASA FIRMS key not configured)",
                 "status": "LIVE_FETCHED"

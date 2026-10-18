@@ -146,12 +146,14 @@ def live_data_status() -> Dict[str, Any]:
     flood = telemetry.get("flood", {}) if telemetry else {}
     heat = telemetry.get("heatwave", {}) if telemetry else {}
     drought = telemetry.get("drought", {}) if telemetry else {}
-    is_live_weather = bool(telemetry and "Open-Meteo" in str(flood.get("source", "")))
+    telemetry_meta = telemetry.get("telemetry_meta", {}) if telemetry else {}
+    is_live_weather = telemetry_meta.get("mode") == "LIVE_WEATHER_API"
     return {
         "status": "LIVE_WEATHER_AVAILABLE" if is_live_weather else "LIVE_WEATHER_UNAVAILABLE",
         "updated_at": telemetry.get("timestamp") if telemetry else None,
         "feeds": [
-            {"name": "Chennai weather and rainfall", "state": "live" if is_live_weather else "unavailable", "source": flood.get("source", "Open-Meteo request unavailable"), "fields": ["temperature", "humidity", "wind", "precipitation", "soil moisture proxy", "CAPE"]},
+            {"name": "Chennai weather and rainfall", "state": "live" if is_live_weather else "unavailable", "source": "Open-Meteo city weather API", "fields": ["temperature", "humidity", "wind", "precipitation"]},
+            {"name": "Atmospheric and soil indicators", "state": "weather_model_derived" if is_live_weather else "unavailable", "source": "Open-Meteo forecast-model fields", "fields": ["soil moisture", "CAPE", "UV", "radiation"]},
             {"name": "Reservoir storage", "state": "simulated", "source": "Rainfall-driven prototype calculation", "fields": ["Poondi", "Cholavaram", "Redhills", "Chembarambakkam"]},
             {"name": "Flood impact and road disruption", "state": "curated_import_required", "source": "Impact Catalogue", "fields": ["road closure", "waterlogging", "outage", "hospital access"]},
             {"name": "Infrastructure dependencies", "state": "verified_import_required", "source": "Graph provenance workflow", "fields": ["pump", "drainage", "power", "hospital", "water"]},
