@@ -184,9 +184,13 @@ def download_evidence_template(template_name: str) -> Response:
             "date,rainfall_mm,soil_moisture_root_zone,groundwater_level_m,reservoir_storage_mcft,service_outcome,source_name,source_url,evidence_status\n"
             "2019-05-01,,,,,,Authoritative source,https://example.org/source,historical_real\n"
         ),
+        "observed_flood_validation": (
+            "event_id,sar_satellite_product,observed_flood_extent_sqkm,gauge_station_id,gauge_level_m,road_closure_duration_hours,power_outage_duration_hours,hospital_access_cut,survey_depth_points_count,survey_mean_depth_m,source_org,source_url,access_date,notes\n"
+            "IMP-CHN-2015-CWC-01,RISAT-1 SAR Inundation Mask,42.50,Saidapet-Causeway-01,9.42,72.0,48.0,true,14,1.85,Central Water Commission,https://www.cwc.gov.in/sites/default/files/ffwnpas2015.pdf,2026-10-10,Field surveyed post-monsoon watermark measurements\n"
+        ),
     }
     if template_name not in templates:
-        return Response(status_code=404, content="Unknown template. Use impact_catalogue, infrastructure_dependencies, or drought_replay.")
+        return Response(status_code=404, content="Unknown template. Use impact_catalogue, infrastructure_dependencies, drought_replay, or observed_flood_validation.")
     return Response(
         content=templates[template_name],
         media_type="text/csv",

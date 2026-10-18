@@ -63,6 +63,8 @@ export default function ModelHealthDashboard() {
   const [error, setError] = useState(null);
   const [selectedWindow, setSelectedWindow] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncNotice, setSyncNotice] = useState(null);
 
   const fetchModelHealth = async (windowKey = selectedWindow) => {
     try {
@@ -78,6 +80,25 @@ export default function ModelHealthDashboard() {
     } finally {
       setLoading(false);
       setIsRefreshing(false);
+    }
+  };
+
+  const syncLiveTelemetry = async () => {
+    try {
+      setIsSyncing(true);
+      const res = await fetch(`${API_URL}/api/model-health/sync-live`, { method: 'POST' });
+      const json = await res.json();
+      if (res.ok) {
+        setSyncNotice(`Synchronized ${json.ingested_observations_count} live observation intervals into model surveillance.`);
+        await fetchModelHealth(selectedWindow);
+      } else {
+        setSyncNotice('Unable to sync live telemetry from external feeds.');
+      }
+    } catch (e) {
+      setSyncNotice('Could not reach backend live telemetry ingestion endpoint.');
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncNotice(null), 6000);
     }
   };
 
@@ -149,9 +170,19 @@ export default function ModelHealthDashboard() {
         return <span className="px-2 py-0.5 text-xs font-bold rounded bg-red-100 text-red-800 border border-red-200">HIGH</span>;
       case 'MODERATE':
         return <span className="px-2 py-0.5 text-xs font-bold rounded bg-amber-100 text-amber-800 border border-amber-200">MODERATE</span>;
+      case 'PENDING':
+      case 'INSUFFICIENT_DATA':
+        return <span className="px-2 py-0.5 text-xs font-bold rounded bg-slate-100 text-slate-600 border border-slate-200">PENDING</span>;
       default:
         return <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-100 text-emerald-800 border border-emerald-200">LOW</span>;
     }
+  };
+
+  const formatTemporalBadge = (st) => {
+    if (!st || st === 'INSUFFICIENT_DATA') {
+      return <span className="text-slate-500 font-semibold">Awaiting</span>;
+    }
+    return <b className="text-slate-800">{st}</b>;
   };
 
   return (
@@ -178,7 +209,7 @@ export default function ModelHealthDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Window selector */}
             <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs">
               {['24h', '7d', '30d'].map((w) => (
@@ -197,6 +228,16 @@ export default function ModelHealthDashboard() {
             </div>
 
             <button
+              onClick={syncLiveTelemetry}
+              disabled={isSyncing}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition border border-indigo-200 disabled:opacity-50"
+              title="Poll latest Open-Meteo weather telemetry and record observation"
+            >
+              <Activity className={`h-3.5 w-3.5 ${isSyncing ? 'animate-pulse text-indigo-600' : ''}`} />
+              {isSyncing ? 'Syncing…' : 'Sync Live Weather'}
+            </button>
+
+            <button
               onClick={() => fetchModelHealth(selectedWindow)}
               disabled={isRefreshing}
               className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition border border-slate-200 disabled:opacity-50"
@@ -206,6 +247,13 @@ export default function ModelHealthDashboard() {
             </button>
           </div>
         </div>
+
+        {syncNotice && (
+          <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2 font-medium">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>{syncNotice}</span>
+          </div>
+        )}
 
         {error && (
           <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 flex items-start gap-3">
@@ -269,11 +317,11 @@ export default function ModelHealthDashboard() {
             {temporal_drift.pattern}
           </div>
           <div className="flex items-center gap-2 mt-3 text-xs text-slate-500">
-            <span>24H: <b className="text-slate-700">{temporal_drift['24h_status']}</b></span>
+            <span>24H: {formatTemporalBadge(temporal_drift['24h_status'])}</span>
             <span>•</span>
-            <span>7D: <b className="text-slate-700">{temporal_drift['7d_status']}</b></span>
+            <span>7D: {formatTemporalBadge(temporal_drift['7d_status'])}</span>
             <span>•</span>
-            <span>30D: <b className="text-slate-700">{temporal_drift['30d_status']}</b></span>
+            <span>30D: {formatTemporalBadge(temporal_drift['30d_status'])}</span>
           </div>
           <p className="text-[10px] text-slate-500 mt-2 line-clamp-1 font-medium">
             {temporal_drift.interpretation}
@@ -287,19 +335,38 @@ export default function ModelHealthDashboard() {
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">
-              {(prediction_drift.live_median_prob * 100).toFixed(1)}%
-            </span>
-            <span className="text-xs font-medium text-slate-500">
-              (Hist: {(prediction_drift.historical_median_prob * 100).toFixed(1)}%)
-            </span>
+            {prediction_drift.live_median_prob != null && !isNaN(prediction_drift.live_median_prob) ? (
+              <>
+                <span className="text-3xl font-black text-slate-900">
+                  {(prediction_drift.live_median_prob * 100).toFixed(1)}%
+                </span>
+                <span className="text-xs font-medium text-slate-500">
+                  (Hist: {prediction_drift.historical_median_prob != null && !isNaN(prediction_drift.historical_median_prob) ? `${(prediction_drift.historical_median_prob * 100).toFixed(1)}%` : '5.4%'})
+                </span>
+              </>
+            ) : (
+              <div>
+                <span className="text-xl font-bold text-slate-700">Awaiting History</span>
+                <span className="block text-[11px] font-medium text-slate-400 mt-0.5">
+                  Hist Baseline: {prediction_drift.historical_median_prob != null && !isNaN(prediction_drift.historical_median_prob) ? `${(prediction_drift.historical_median_prob * 100).toFixed(1)}%` : '5.4%'}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-3">
             <span className="text-xs text-slate-500 font-medium">Shift:</span>
-            <span className={`text-xs font-bold ${prediction_drift.probability_shift >= 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-              {prediction_drift.probability_shift >= 0 ? '+' : ''}{(prediction_drift.probability_shift * 100).toFixed(2)}%
+            {prediction_drift.probability_shift != null && !isNaN(prediction_drift.probability_shift) ? (
+              <span className={`text-xs font-bold ${prediction_drift.probability_shift >= 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                {prediction_drift.probability_shift >= 0 ? '+' : ''}{(prediction_drift.probability_shift * 100).toFixed(2)}%
+              </span>
+            ) : (
+              <span className="text-xs font-semibold text-slate-400">
+                — (Awaiting N ≥ 5)
+              </span>
+            )}
+            <span className="ml-auto">
+              {getSeverityBadge(prediction_drift.severity || (prediction_drift.live_median_prob == null ? 'PENDING' : 'LOW'))}
             </span>
-            <span className="ml-auto">{getSeverityBadge(prediction_drift.severity)}</span>
           </div>
         </div>
 
@@ -382,36 +449,44 @@ export default function ModelHealthDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-mono text-xs">
-              {feature_drift.top_drifting_features.map((feat) => (
-                <tr key={feat.feature} className="hover:bg-slate-50/70 transition">
-                  <td className="py-3.5 px-4 font-bold text-slate-800 font-sans">
-                    {feat.feature.replace(/_/g, ' ')}
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-500">{feat.training_median}</td>
-                  <td className="py-3.5 px-4 text-slate-800 font-bold">{feat.live_median}</td>
-                  <td className="py-3.5 px-4 font-bold">
-                    <span className={feat.pct_change_median >= 0 ? 'text-amber-600' : 'text-blue-600'}>
-                      {feat.pct_change_median >= 0 ? '+' : ''}{feat.pct_change_median}%
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-bold text-indigo-700">{feat.psi}</td>
-                  <td className="py-3.5 px-4 text-xs text-slate-500">
-                    {feat.ks_statistic} (p={feat.ks_pvalue})
-                  </td>
-                  <td className="py-3.5 px-4">{getSeverityBadge(feat.severity)}</td>
-                  <td className="py-3.5 px-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      feat.status === 'DRIFT DETECTED'
-                        ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                        : feat.status === 'WATCH'
-                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                    }`}>
-                      {feat.status}
-                    </span>
+              {feature_drift.top_drifting_features && feature_drift.top_drifting_features.length > 0 ? (
+                feature_drift.top_drifting_features.map((feat) => (
+                  <tr key={feat.feature} className="hover:bg-slate-50/70 transition">
+                    <td className="py-3.5 px-4 font-bold text-slate-800 font-sans">
+                      {feat.feature.replace(/_/g, ' ')}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-500">{feat.training_median}</td>
+                    <td className="py-3.5 px-4 text-slate-800 font-bold">{feat.live_median}</td>
+                    <td className="py-3.5 px-4 font-bold">
+                      <span className={feat.pct_change_median >= 0 ? 'text-amber-600' : 'text-blue-600'}>
+                        {feat.pct_change_median >= 0 ? '+' : ''}{feat.pct_change_median}%
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-bold text-indigo-700">{feat.psi}</td>
+                    <td className="py-3.5 px-4 text-xs text-slate-500">
+                      {feat.ks_statistic} (p={feat.ks_pvalue})
+                    </td>
+                    <td className="py-3.5 px-4">{getSeverityBadge(feat.severity)}</td>
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        feat.status === 'DRIFT DETECTED'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                          : feat.status === 'WATCH'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      }`}>
+                        {feat.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="py-8 text-center text-slate-400 font-sans font-medium">
+                    Awaiting streaming telemetry: At least 5 recorded live observations are required before feature distribution drift (PSI, KS-stat) can be calculated.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -427,27 +502,27 @@ export default function ModelHealthDashboard() {
               Uncertainty & Epistemic Dispersion
             </h3>
             <span className="text-xs px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
-              {uncertainty_trend.condition}
+              {uncertainty_trend.condition || 'STABLE'}
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-4 pt-1">
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
               <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Epistemic Variance</span>
-              <span className="text-xl font-black text-slate-800">{uncertainty_trend.epistemic_variance_mean}</span>
+              <span className="text-xl font-black text-slate-800">{uncertainty_trend.epistemic_variance_mean ?? '—'}</span>
               <span className="text-[10px] text-slate-500 block mt-1 font-medium">Tree ensemble variance</span>
             </div>
 
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
               <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Prediction Interval Width</span>
-              <span className="text-xl font-black text-slate-800">{uncertainty_trend.prediction_interval_width_mean}</span>
+              <span className="text-xl font-black text-slate-800">{uncertainty_trend.prediction_interval_width_mean ?? '—'}</span>
               <span className="text-[10px] text-slate-500 block mt-1 font-medium">Split-conformal P90 - P10</span>
             </div>
           </div>
 
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 leading-relaxed font-medium">
             <Info className="h-4 w-4 text-indigo-600 inline mr-1.5 -mt-0.5" />
-            {uncertainty_trend.note}
+            {uncertainty_trend.note || 'Uncertainty tracking evaluates model confidence across recent live outputs.'}
           </div>
         </div>
 

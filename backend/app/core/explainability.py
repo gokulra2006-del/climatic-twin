@@ -23,6 +23,8 @@ class ExplainabilityEngine:
             
         path = os.path.join(os.path.dirname(__file__), '..', 'models', 'best_live_model.pkl')
         if not os.path.exists(path):
+            path = os.path.join(os.path.dirname(__file__), '..', 'models', 'flood_rf_model.pkl')
+        if not os.path.exists(path):
             return None, []
         try:
             with open(path, 'rb') as f:
@@ -35,6 +37,7 @@ class ExplainabilityEngine:
             return None, []
 
     def _compute_attributions(self, features: dict):
+        global SHAP_AVAILABLE
         model, f_names = self._get_model()
         if not model or not f_names:
             return []

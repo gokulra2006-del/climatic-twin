@@ -109,3 +109,78 @@ def replay_hazard(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Replay failed: {str(e)}")
+
+
+@router.get("/drought-readiness/summary")
+def get_drought_evidence_readiness():
+    """
+    Evaluates evidence readiness for 2019 Chennai Day-Zero drought replay across 5 essential hydro-climate dimensions.
+    Enforces scientific claim boundaries: incomplete inputs must remain labelled as proxy only.
+    """
+    inputs = [
+        {
+            "dimension": "Reservoir Storage Telemetry",
+            "status": "AVAILABLE_HISTORICAL_REAL",
+            "source": "CMWSSB Daily Dam Log (Poondi, Cholavaram, Redhills, Chembarambakkam)",
+            "coverage": "2004-01-01 to 2020-12-11 (100% daily complete)",
+            "points_awarded": 25,
+            "max_points": 25,
+            "is_proxy": False
+        },
+        {
+            "dimension": "Daily Precipitation Series",
+            "status": "PARTIAL_PROXY",
+            "source": "NASA GPM IMERG Daily Catchment Accumulation (0.1 deg)",
+            "coverage": "2015-present daily (IMD AWS station telemetry pending ingestion)",
+            "points_awarded": 15,
+            "max_points": 25,
+            "is_proxy": True
+        },
+        {
+            "dimension": "Groundwater Table Levels",
+            "status": "MISSING_INPUT",
+            "source": "Central Ground Water Board (CGWB) & GCC Piezometer Network",
+            "coverage": "Requires district well-depth monthly logs for 2019",
+            "points_awarded": 0,
+            "max_points": 20,
+            "is_proxy": True
+        },
+        {
+            "dimension": "Soil Moisture Dynamics",
+            "status": "PROXY_REANALYSIS",
+            "source": "ERA5-Land Volumetric Soil Water Layer 1-2 (0.1 deg)",
+            "coverage": "Reanalysis model-derived proxy; not in-situ soil probes",
+            "points_awarded": 10,
+            "max_points": 15,
+            "is_proxy": True
+        },
+        {
+            "dimension": "Verified Service Outcomes",
+            "status": "AVAILABLE_HISTORICAL_REAL",
+            "source": "CMWSSB & Southern Railway Logs (Jolarpettai 'Jaldoot' Train & Redhills desiccation)",
+            "coverage": "100% documented impact records in Impact Catalogue (Event IMP-CHN-2019-CMWSSB-01/02)",
+            "points_awarded": 15,
+            "max_points": 15,
+            "is_proxy": False
+        }
+    ]
+    
+    total_score = sum(i["points_awarded"] for i in inputs)
+    
+    return {
+        "readiness_score": total_score,
+        "max_score": 100,
+        "overall_status": "PARTIAL_PROXY_STORAGE_REPLAY",
+        "scientific_claim_boundary": (
+            "Current 2019 drought replay operates as a calibrated reservoir-storage stress proxy. "
+            "Until CGWB piezometer groundwater and in-situ soil moisture observations are fully ingested, "
+            "this module must NOT claim comprehensive hydro-meteorological drought modelling."
+        ),
+        "inputs": inputs,
+        "verified_2019_events_linked": [
+            {"event_id": "IMP-CHN-2019-CMWSSB-01", "name": "Redhills Reservoir Zero-Storage Desiccation", "date": "2019-06-15", "status": "historical_real"},
+            {"event_id": "IMP-CHN-2019-CMWSSB-02", "name": "Chembarambakkam Lake Bed Desiccation", "date": "2019-06-20", "status": "historical_real"},
+            {"event_id": "IMP-CHN-2019-SR-03", "name": "Jolarpettai-Chennai Water Train (Jaldoot) Intake", "date": "2019-07-12", "status": "historical_real"}
+        ]
+    }
+

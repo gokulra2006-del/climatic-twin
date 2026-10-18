@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Bot, BrainCircuit, ClipboardCheck, Copy, Database, Download, Loader2, RefreshCw, Send, ShieldCheck, TimerReset } from 'lucide-react';
+import { AlertTriangle, Bot, BrainCircuit, ChevronDown, ChevronUp, ClipboardCheck, Copy, Database, Download, Loader2, RefreshCw, Send, ShieldCheck, TimerReset } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 const RISK = { LOW: 'bg-emerald-50 text-emerald-700 border-emerald-200', MODERATE: 'bg-amber-50 text-amber-800 border-amber-200', HIGH: 'bg-orange-50 text-orange-800 border-orange-200', CRITICAL: 'bg-rose-50 text-rose-800 border-rose-200' };
@@ -16,6 +16,17 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
   const [answerMode, setAnswerMode] = useState('');
   const [asking, setAsking] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(() => {
+    return localStorage.getItem('climatetwin_nova_expanded') === 'true';
+  });
+
+  const toggleExpanded = () => {
+    setIsExpanded(prev => {
+      const next = !prev;
+      localStorage.setItem('climatetwin_nova_expanded', String(next));
+      return next;
+    });
+  };
 
   const refresh = useCallback(async () => {
     if (!apiOnline) { setError('The local backend is unavailable. Start it, then refresh NOVA.'); setLoading(false); return; }
@@ -60,8 +71,52 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
   const { priority_threat: threat = {}, decision_brief: brief = {}, data_trust: trust = {}, highest_priority_asset: asset = {}, source_ledger: ledger = {}, recommended_checks: checks = [], next_60_minutes: horizon = [] } = summary;
   const level = threat.level || 'UNKNOWN';
 
-  return <section aria-label="NOVA operations workspace" className="mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-    <header className="border-b border-slate-200 px-5 py-4 sm:px-6"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-start gap-3"><div className="rounded-lg bg-indigo-50 p-2.5"><BrainCircuit className="h-6 w-6 text-indigo-700" /></div><div><div className="flex flex-wrap items-center gap-2"><h2 className="font-heading text-xl font-bold text-slate-950">NOVA Operations Workspace</h2><span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-700">DECISION SUPPORT</span></div><p className="mt-1 text-sm text-slate-500">Prioritise evidence, assign the next check, and prepare a traceable handover.</p></div></div><div className="flex flex-wrap items-center gap-2"><span className="text-xs text-slate-500">Updated {new Date(summary.timestamp).toLocaleTimeString()}</span><button onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500"><RefreshCw className="h-4 w-4" /> Refresh</button></div></div></header>
+  if (!isExpanded) {
+    return (
+      <section aria-label="NOVA operations workspace" className="mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-indigo-200">
+        <div className="flex flex-col gap-3 p-4 sm:px-6 sm:py-3.5 md:flex-row md:items-center md:justify-between bg-gradient-to-r from-indigo-50/40 via-white to-slate-50/40">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="rounded-lg bg-indigo-50 p-2 text-indigo-700 shrink-0">
+              <BrainCircuit className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex flex-wrap items-center gap-2">
+              <span className="font-heading text-sm font-bold text-slate-950">NOVA Workspace</span>
+              <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">DECISION SUPPORT</span>
+              <span className="text-slate-300 hidden sm:inline">|</span>
+              <span className="text-xs text-slate-500">Priority:</span>
+              <span className="text-xs font-semibold text-slate-900">{String(threat.type || 'No priority').replaceAll('_', ' ')}</span>
+              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${riskStyle(level)}`}>{level}</span>
+              <span className="text-slate-300 hidden lg:inline">|</span>
+              <span className="hidden lg:inline text-xs text-slate-600 truncate max-w-md">
+                <strong>Action:</strong> {brief.action || summary.recommended_action}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+            <span className="hidden xl:inline text-xs text-slate-500 mr-1">
+              Trust: <strong>{Math.round((trust.score ?? 0) * 100)}%</strong>
+            </span>
+            <button
+              onClick={refresh}
+              title="Refresh briefing"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus:ring-2 focus:ring-indigo-500 transition"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={toggleExpanded}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 shadow-sm focus:ring-2 focus:ring-indigo-500 transition"
+            >
+              Expand NOVA <ChevronDown className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return <section aria-label="NOVA operations workspace" className="mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition">
+    <header className="border-b border-slate-200 px-5 py-4 sm:px-6"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-start gap-3"><div className="rounded-lg bg-indigo-50 p-2.5"><BrainCircuit className="h-6 w-6 text-indigo-700" /></div><div><div className="flex flex-wrap items-center gap-2"><h2 className="font-heading text-xl font-bold text-slate-950">NOVA Operations Workspace</h2><span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-700">DECISION SUPPORT</span></div><p className="mt-1 text-sm text-slate-500">Prioritise evidence, assign the next check, and prepare a traceable handover.</p></div></div><div className="flex flex-wrap items-center gap-2"><span className="text-xs text-slate-500">Updated {new Date(summary.timestamp).toLocaleTimeString()}</span><button onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500"><RefreshCw className="h-4 w-4" /> Refresh</button><button onClick={toggleExpanded} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 focus:ring-2 focus:ring-indigo-500 transition">Collapse NOVA <ChevronUp className="h-4 w-4" /></button></div></div></header>
 
     <div className="grid gap-4 p-5 sm:p-6 xl:grid-cols-3">
       <article className="rounded-xl border border-slate-200 p-4 xl:col-span-2"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Current operational priority</p><h3 className="mt-1 font-heading text-2xl font-bold text-slate-950">{String(threat.type || 'No priority').replaceAll('_', ' ')}</h3></div><span className={`rounded-full border px-3 py-1 text-sm font-bold ${riskStyle(level)}`}>{level}</span></div><p className="mt-3 text-sm leading-6 text-slate-700">{summary.current_situation}</p><div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 p-4"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-700"><ClipboardCheck className="h-4 w-4" /> Next accountable action</div><p className="mt-2 text-base font-semibold text-slate-900">{brief.action || summary.recommended_action}</p><div className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-3"><span><b>Owner:</b> {brief.owner || 'Duty analyst'}</span><span><b>Review:</b> {brief.review_in_minutes || 60} min</span><span><b>Mode:</b> {brief.operating_mode || 'NORMAL'}</span></div></div></article>

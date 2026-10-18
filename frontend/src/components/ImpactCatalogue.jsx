@@ -6,7 +6,7 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
-export default function ImpactCatalogue() {
+export default function ImpactCatalogue({ onNavigateToReview }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -120,26 +120,30 @@ export default function ImpactCatalogue() {
   const getEvidenceBadge = (status) => {
     switch (status) {
       case 'historical_real':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">HISTORICAL REAL</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-emerald-100 text-emerald-800 border border-emerald-300">HISTORICAL REAL</span>;
+      case 'under_review':
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-amber-100 text-amber-800 border border-amber-300">UNDER REVIEW</span>;
       case 'proxy':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-300">PROXY / DERIVED</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-blue-100 text-blue-800 border border-blue-300">PROXY / DERIVED</span>;
       case 'synthetic':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-300">SYNTHETIC TEST</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-amber-100 text-amber-800 border border-amber-300">SYNTHETIC TEST</span>;
+      case 'rejected':
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-rose-100 text-rose-800 border border-rose-300">REJECTED</span>;
       default:
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700 border border-slate-300">UNVERIFIED</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-slate-100 text-slate-700 border border-slate-300">UNVERIFIED</span>;
     }
   };
 
   const getSeverityBadge = (sev) => {
     switch (sev) {
       case 'critical':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-800 border border-red-200">CRITICAL</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-red-100 text-red-800 border border-red-200">CRITICAL</span>;
       case 'high':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-orange-100 text-orange-800 border border-orange-200">HIGH</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-orange-100 text-orange-800 border border-orange-200">HIGH</span>;
       case 'moderate':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-yellow-100 text-yellow-800 border border-yellow-200">MODERATE</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-yellow-100 text-yellow-800 border border-yellow-200">MODERATE</span>;
       default:
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">LOW</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap bg-slate-100 text-slate-700 border border-slate-200">LOW</span>;
     }
   };
 
@@ -148,6 +152,13 @@ export default function ImpactCatalogue() {
       return detailed
         ? <span className="font-semibold text-amber-800">Source needed — add a traceable official record</span>
         : <span title="Add a traceable source before assigning evidence confidence." className="inline-flex rounded border border-amber-300 bg-amber-50 px-2 py-0.5 font-sans text-[10px] font-bold uppercase text-amber-800">Add source</span>;
+    }
+    if (record.rubric?.total_score !== undefined && record.rubric?.total_score !== null) {
+      return (
+        <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-xs">
+          {record.rubric.total_score}/100
+        </span>
+      );
     }
     if (record.confidence === null || record.confidence === undefined) {
       return <span className="text-slate-500">Not assessed</span>;
@@ -176,16 +187,24 @@ export default function ImpactCatalogue() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center flex-wrap gap-2.5">
+          {onNavigateToReview && (
+            <button
+              onClick={onNavigateToReview}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+            >
+              <ShieldCheck className="h-4 w-4" /> Evidence Review Dashboard
+            </button>
+          )}
           <button
             onClick={() => setEvidenceGuideOpen(true)}
-            className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition border border-indigo-200 flex items-center gap-1.5"
           >
             <BookOpen className="h-4 w-4" /> Add real evidence
           </button>
           <button
             onClick={() => setEvalModal(true)}
-            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+            className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
           >
             <ShieldCheck className="h-4 w-4" />
             Warning Impact Validation
@@ -308,14 +327,14 @@ export default function ImpactCatalogue() {
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="text-[10px] font-bold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="px-5 py-3.5">Event ID</th>
-                  <th className="px-5 py-3.5">Start Timestamp</th>
-                  <th className="px-5 py-3.5">Zone & Coordinates</th>
-                  <th className="px-5 py-3.5">Impact Category</th>
-                  <th className="px-5 py-3.5">Severity</th>
-                  <th className="px-5 py-3.5">Evidence Status</th>
-                  <th className="px-5 py-3.5">Evidence Confidence</th>
-                  <th className="px-5 py-3.5 text-right">Action</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Event ID</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Start Timestamp</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Zone & Coordinates</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Impact Category</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Severity</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap min-w-[130px]">Evidence Status</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Evidence Confidence</th>
+                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-sans text-xs">
@@ -326,21 +345,21 @@ export default function ImpactCatalogue() {
                       onClick={() => setSelectedRecord(r)}
                       className="hover:bg-slate-50/80 cursor-pointer transition"
                     >
-                      <td className="px-5 py-3.5 font-bold font-mono text-indigo-700">{r.event_id}</td>
-                      <td className="px-5 py-3.5 text-slate-600">
+                      <td className="px-5 py-3.5 font-bold font-mono text-indigo-700 whitespace-nowrap">{r.event_id}</td>
+                      <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">
                         {new Date(r.start_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 whitespace-nowrap">
                         <span className="font-bold text-slate-800 block">{r.zone}</span>
                         <span className="text-[10px] font-mono text-slate-400">{r.latitude.toFixed(4)}°N, {r.longitude.toFixed(4)}°E</span>
                       </td>
-                      <td className="px-5 py-3.5 font-semibold text-slate-700 capitalize">
+                      <td className="px-5 py-3.5 font-semibold text-slate-700 capitalize whitespace-nowrap">
                         {r.impact_type.replace(/_/g, ' ')}
                       </td>
-                      <td className="px-5 py-3.5">{getSeverityBadge(r.severity)}</td>
-                      <td className="px-5 py-3.5">{getEvidenceBadge(r.evidence_status)}</td>
-                      <td className="px-5 py-3.5 font-mono font-bold text-slate-700">{getConfidenceDisplay(r)}</td>
-                      <td className="px-5 py-3.5 text-right">
+                      <td className="px-5 py-3.5 whitespace-nowrap">{getSeverityBadge(r.severity)}</td>
+                      <td className="px-5 py-3.5 whitespace-nowrap">{getEvidenceBadge(r.evidence_status)}</td>
+                      <td className="px-5 py-3.5 font-mono font-bold text-slate-700 whitespace-nowrap">{getConfidenceDisplay(r)}</td>
+                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
                         <span className="text-indigo-600 font-bold hover:underline inline-flex items-center gap-1">
                           Inspect <ChevronRight className="h-3 w-3" />
                         </span>

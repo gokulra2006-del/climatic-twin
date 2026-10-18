@@ -327,11 +327,16 @@ class ModelMonitoringEngine:
         Distinguishes prediction distribution drift from model performance degradation.
         """
         df_live = self.get_live_data_window(window_str)
+        hist_median = float(np.median(self.historical_predictions)) if len(self.historical_predictions) > 0 else 0.054
         if len(df_live) < 5 or "predicted_probability" not in df_live.columns:
             return {
                 "window": window_str,
                 "status": "INSUFFICIENT_DATA",
-                "message": "Insufficient live predictions for prediction drift calculation."
+                "severity": "PENDING",
+                "live_median_prob": None,
+                "historical_median_prob": round(hist_median, 4),
+                "probability_shift": None,
+                "message": "Insufficient live predictions for prediction drift calculation (minimum 5 observations required)."
             }
             
         live_probs = df_live["predicted_probability"].dropna().values
@@ -670,6 +675,12 @@ class ModelMonitoringEngine:
                 "NOVA Telemetry Guard Alert: Anomalous telemetry observed from surface sensors. "
                 "Because data quality is degraded, observed distribution variances must NOT be interpreted as true model drift. "
                 "The production model remains in WATCH status until sensor feeds are verified."
+            )
+        elif status == "AWAITING_LIVE_HISTORY":
+            briefing = (
+                "NOVA Live Surveillance: Operational telemetry baseline is currently awaiting live streaming history. "
+                f"The production champion ({self.champion_version}) is active with historical validation benchmark (PR-AUC: {self.champion_metadata['validation_metrics']['pr_auc']:.4f}). "
+                "A minimum of 5 recorded live observations is required to compute empirical distribution drift and temporal stability indices."
             )
         elif status == "HEALTHY":
             briefing = (
