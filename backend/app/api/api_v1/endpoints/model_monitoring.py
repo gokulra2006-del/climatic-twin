@@ -6,8 +6,7 @@ ClimateTwin Chennai Project
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
-import numpy as np
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from app.core.model_monitoring import model_monitoring_engine
 
 router = APIRouter()
@@ -78,9 +77,9 @@ def get_drift_history(limit: int = Query(30, ge=1, le=100)):
     for r in buffer_records:
         timeline.append({
             "timestamp": r.get("timestamp"),
-            "rainfall_7d_sum": r.get("rainfall_7d_sum", 0.0),
-            "predicted_probability": r.get("predicted_probability", 0.0),
-            "epistemic_variance": r.get("epistemic_variance", 0.0),
+            "rainfall_7d_sum": r.get("rainfall_7d_sum"),
+            "predicted_probability": r.get("predicted_probability"),
+            "epistemic_variance": r.get("epistemic_variance"),
             "uncertainty_level": r.get("uncertainty_level", "LOW")
         })
         
@@ -164,58 +163,60 @@ def evaluate_custom_telemetry(payload: EvaluateLiveTelemetryRequest):
 @router.post("/sync-live")
 def sync_live_weather_telemetry():
     """
-    Polls real-time Open-Meteo / satellite telemetry for Greater Chennai,
-    evaluates current prediction probabilities, and records observations
-    into the model monitoring buffer for live distribution tracking.
+    Records one provider-observed Open-Meteo weather snapshot for Greater Chennai.
+
+    This endpoint never fills missing measurements with seasonal constants, random
+    noise, simulated reservoir levels, or heuristic model probabilities.  Those
+    fields remain absent until a verified source or an end-to-end deployed
+    inference path is available.
     """
     try:
         from app.core.satellite_ingestion import satellite_engine
         telemetry = satellite_engine.get_latest_satellite_telemetry()
-    except Exception:
-        telemetry = {}
-        
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Live weather provider is unavailable: {exc}") from exc
+
+    meta = telemetry.get("telemetry_meta", {}) if telemetry else {}
+    if meta.get("mode") != "LIVE_WEATHER_API":
+        raise HTTPException(
+            status_code=503,
+            detail="No current live weather provider observation is available; no monitoring record was created."
+        )
+
     flood_telem = telemetry.get("flood", {}) if telemetry else {}
-    heat_telem = telemetry.get("heatwave", {}) if telemetry else {}
-    
-    # Extract live features or default to seasonal Chennai current values
-    r_daily = float(flood_telem.get("rainfall_daily", 0.0) or 0.0)
-    r_3d = float(flood_telem.get("rainfall_3d_sum", 0.0) or 0.0)
-    r_7d = float(flood_telem.get("rainfall_7d_sum", 0.0) or 0.0)
-    t_mean = float(heat_telem.get("air_temp_c", 30.5) or 30.5)
-    
-    # Ingest a rolling sequence of 7 daily observations (past week)
-    now = datetime.now(timezone.utc)
-    ingested_count = 0
-    for day_offset in range(6, -1, -1):
-        obs_time = (now - timedelta(days=day_offset)).isoformat()
-        obs_rain_daily = max(0.0, r_daily + np.random.normal(0, 1.5)) if r_daily > 0 else float(np.random.choice([0.0, 0.0, 0.5, 2.0]))
-        obs_rain_7d = max(obs_rain_daily, r_7d + np.random.normal(0, 3.0))
-        # Compute baseline predicted probability with small stochastic variation
-        pred_prob = float(np.clip(0.04 + (obs_rain_7d / 200.0) * 0.4, 0.01, 0.85))
-        
-        obs = {
-            "timestamp": obs_time,
-            "rainfall_daily": round(obs_rain_daily, 2),
-            "rainfall_3d_sum": round(max(obs_rain_daily, r_3d), 2),
-            "rainfall_7d_sum": round(obs_rain_7d, 2),
-            "temp_mean": round(t_mean + np.random.uniform(-1.0, 1.0), 1),
-            "temp_max": round(t_mean + 4.0, 1),
-            "temp_min": round(t_mean - 4.0, 1),
-            "total_reservoir_level": 7850.0,
-            "predicted_probability": round(pred_prob, 4),
-            "epistemic_variance": 0.012,
-            "prediction_interval_width": 0.16,
-            "uncertainty_level": "LOW",
-            "source": "Open-Meteo Live API Synchronization"
+    observed_at = meta.get("observed_at") or telemetry.get("timestamp")
+    if not observed_at:
+        raise HTTPException(status_code=502, detail="Live weather response did not include an observation timestamp.")
+
+    # The same provider timestamp may be served from the ten-minute cache.  Do not
+    # turn a repeated click into extra statistical samples.
+    if any(record.get("provider_observed_at") == observed_at for record in model_monitoring_engine.live_buffer):
+        return {
+            "status": "DUPLICATE_LIVE_OBSERVATION",
+            "ingested_observations_count": 0,
+            "buffer_size": len(model_monitoring_engine.live_buffer),
+            "latest_overview": model_monitoring_engine.get_comprehensive_model_health("7d"),
+            "note": "The latest provider observation was already recorded; wait for a new provider timestamp."
         }
-        model_monitoring_engine.record_live_observation(obs)
-        ingested_count += 1
-        
+
+    weather_fields = (
+        "rainfall_daily", "rainfall_3d_sum", "rainfall_5d_sum", "rainfall_7d_sum",
+        "temp_mean", "temp_max", "temp_min", "dew_point_mean", "wind_speed_mean"
+    )
+    observation = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "provider_observed_at": observed_at,
+        "source": "Open-Meteo live weather API",
+        "source_mode": "LIVE_WEATHER_API",
+        **{field: flood_telem.get(field) for field in weather_fields},
+    }
+    model_monitoring_engine.record_live_observation(observation)
+
     return {
-        "status": "SUCCESS",
-        "ingested_observations_count": ingested_count,
+        "status": "LIVE_WEATHER_OBSERVATION_RECORDED",
+        "ingested_observations_count": 1,
         "buffer_size": len(model_monitoring_engine.live_buffer),
         "latest_overview": model_monitoring_engine.get_comprehensive_model_health("7d"),
-        "note": "Synchronized real-time weather observations into model surveillance buffer."
+        "note": "Recorded one provider-observed weather snapshot. Reservoir values and flood-model outputs are intentionally excluded until verified sources are connected."
     }
 

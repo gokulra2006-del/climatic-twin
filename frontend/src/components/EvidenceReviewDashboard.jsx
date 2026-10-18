@@ -1041,41 +1041,50 @@ export default function EvidenceReviewDashboard({ onNavigateToCatalogue }) {
               {evalResult && (
                 <div className="space-y-3 pt-2">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
-                      <div className="text-[10px] text-slate-500 font-bold uppercase">Precision</div>
-                      <div className="text-lg font-black text-slate-900">
+                    <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 text-center shadow-xs">
+                      <div className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">Precision</div>
+                      <div className="text-xl font-black text-emerald-950">
                         {evalResult.precision !== null ? `${(evalResult.precision * 100).toFixed(1)}%` : 'N/A'}
                       </div>
                     </div>
-                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
-                      <div className="text-[10px] text-slate-500 font-bold uppercase">Recall</div>
-                      <div className="text-lg font-black text-slate-900">
+                    <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 text-center shadow-xs">
+                      <div className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">Recall</div>
+                      <div className="text-xl font-black text-emerald-950">
                         {evalResult.recall !== null ? `${(evalResult.recall * 100).toFixed(1)}%` : 'N/A'}
                       </div>
                     </div>
-                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
-                      <div className="text-[10px] text-slate-500 font-bold uppercase">F1-Score</div>
-                      <div className="text-lg font-black text-slate-900">
+                    <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 text-center shadow-xs">
+                      <div className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">F1-Score</div>
+                      <div className="text-xl font-black text-emerald-950">
                         {evalResult.f1_score !== null ? evalResult.f1_score.toFixed(3) : 'N/A'}
                       </div>
                     </div>
-                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
-                      <div className="text-[10px] text-slate-500 font-bold uppercase">Brier Score</div>
-                      <div className="text-lg font-black text-slate-900">
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center shadow-xs">
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Brier Score</div>
+                      <div className="text-xl font-black text-slate-900">
                         {evalResult.brier_score !== null ? evalResult.brier_score.toFixed(3) : 'N/A'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-1">
-                    <div><strong>Sample Size (N):</strong> {evalResult.sample_size_n} historical real events (Excluded {evalResult.excluded_synthetic_proxy_records} synthetic/proxy records).</div>
-                    <div><strong>Mean Warning Lead Time:</strong> {evalResult.warning_lead_time_hours_mean ?? 0} hours</div>
-                    <div><strong>False Alarms:</strong> {evalResult.false_alarms ?? 0}</div>
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1.5 text-slate-700">
+                    <div className="flex justify-between items-center pb-1 border-b border-slate-200 font-medium">
+                      <span><strong>Sample Size (N):</strong> {evalResult.sample_size_n} historical real events</span>
+                      <span className="text-[11px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold">
+                        Excluded {evalResult.excluded_synthetic_proxy_records} synthetic/proxy
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-0.5">
+                      <div><strong>Verified Events Matched:</strong> {evalResult.matched_events_count} of {evalResult.eligible_historical_real_records || evalResult.sample_size_n} ({((evalResult.event_detection_rate || 0) * 100).toFixed(1)}%)</div>
+                      <div><strong>Mean Warning Lead Time:</strong> {evalResult.warning_lead_time_hours_mean ?? 0} hours</div>
+                      <div><strong>False Alarms:</strong> {evalResult.false_alarms ?? 0} warning(s)</div>
+                      <div><strong>Provenance:</strong> <span className="font-mono text-[10px] bg-slate-100 px-1 py-0.5 rounded text-slate-800">ClimateTwin-Flood-RF-v2.0 & GNN-LSTM</span></div>
+                    </div>
                   </div>
 
                   {evalResult.sample_size_warning && (
-                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-900 text-xs flex items-start gap-2">
-                      <ShieldAlert className="h-4 w-4 text-rose-600 mt-0.5 shrink-0" />
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-start gap-2">
+                      <ShieldAlert className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                       <span>{evalResult.sample_size_warning}</span>
                     </div>
                   )}

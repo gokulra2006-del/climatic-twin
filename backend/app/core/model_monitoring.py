@@ -158,22 +158,48 @@ class ModelMonitoringEngine:
         self.live_buffer: List[Dict[str, Any]] = self._initialize_live_buffer()
         
     def _compute_historical_predictions(self) -> np.ndarray:
-        """Computes predictions on historical training/validation data for baseline comparison."""
+        """Load a reproducible prediction baseline from a saved model, when available."""
         cache_path = os.path.join(self.processed_dir, "historical_model_predictions.npy")
         if os.path.exists(cache_path):
             try:
-                return np.load(cache_path)
+                cached = np.load(cache_path)
+                return cached[np.isfinite(cached)]
             except Exception:
                 pass
-                
-        # Generate baseline distribution using calibrated model or historical heuristic
-        # Historical flood frequency in Chennai ~7-10% of rainy monsoon days, ~2.5% overall
-        np.random.seed(42)
-        base_preds = np.clip(np.random.exponential(scale=0.06, size=len(self.history_df)), 0.0, 0.95)
-        # Ensure high risk for known historical flood events (Nov-Dec 2015)
-        nov_2015_mask = (self.history_df.index >= '2015-11-01') & (self.history_df.index <= '2015-12-15')
-        base_preds[nov_2015_mask] = np.random.uniform(0.72, 0.96, size=nov_2015_mask.sum())
-        return base_preds
+
+        # Never manufacture a distribution for a model-health claim.  A baseline is
+        # available only when the deployed estimator and compatible historical input
+        # features are both present in the deployment.
+        for model_name in ("best_live_model.pkl", "flood_rf_model.pkl"):
+            model_path = os.path.join(self.models_dir, model_name)
+            if not os.path.exists(model_path):
+                continue
+            try:
+                with open(model_path, "rb") as model_file:
+                    loaded_artifact = pickle.load(model_file)
+                # Training exports store the estimator together with metrics and
+                # feature metadata.  Support that documented bundle format while
+                # still rejecting anything that does not expose predict_proba.
+                model = loaded_artifact.get("model") if isinstance(loaded_artifact, dict) else loaded_artifact
+                if not hasattr(model, "predict_proba"):
+                    continue
+
+                columns = list(getattr(model, "feature_names_in_", self.feature_cols))
+                if not columns or any(column not in self.history_df.columns for column in columns):
+                    continue
+                feature_matrix = self.history_df[columns].dropna()
+                if len(feature_matrix) < 5:
+                    continue
+                probabilities = np.asarray(model.predict_proba(feature_matrix)[:, 1], dtype=float)
+                probabilities = probabilities[np.isfinite(probabilities)]
+                if len(probabilities) >= 5:
+                    return probabilities
+            except Exception:
+                # A monitoring baseline must be reproducible; an incompatible model
+                # is reported as unavailable instead of falling back to synthetic data.
+                continue
+
+        return np.array([], dtype=float)
 
     def _initialize_live_buffer(self) -> List[Dict[str, Any]]:
         """Start with no history; only recorded observations may drive drift claims."""
@@ -327,20 +353,27 @@ class ModelMonitoringEngine:
         Distinguishes prediction distribution drift from model performance degradation.
         """
         df_live = self.get_live_data_window(window_str)
-        hist_median = float(np.median(self.historical_predictions)) if len(self.historical_predictions) > 0 else 0.054
-        if len(df_live) < 5 or "predicted_probability" not in df_live.columns:
+        hist_probs = self.historical_predictions
+        has_baseline = len(hist_probs) >= 5
+        live_probs = (
+            df_live["predicted_probability"].dropna().values
+            if "predicted_probability" in df_live.columns else np.array([])
+        )
+        if not has_baseline or len(live_probs) < 5:
+            reasons = []
+            if not has_baseline:
+                reasons.append("a reproducible historical model-prediction baseline")
+            if len(live_probs) < 5:
+                reasons.append("five recorded live model outputs")
             return {
                 "window": window_str,
                 "status": "INSUFFICIENT_DATA",
                 "severity": "PENDING",
                 "live_median_prob": None,
-                "historical_median_prob": round(hist_median, 4),
+                "historical_median_prob": round(float(np.median(hist_probs)), 4) if has_baseline else None,
                 "probability_shift": None,
-                "message": "Insufficient live predictions for prediction drift calculation (minimum 5 observations required)."
+                "message": "Prediction drift is awaiting " + " and ".join(reasons) + "."
             }
-            
-        live_probs = df_live["predicted_probability"].dropna().values
-        hist_probs = self.historical_predictions
         
         hist_median = float(np.median(hist_probs))
         live_median = float(np.median(live_probs))

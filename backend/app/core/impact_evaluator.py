@@ -83,7 +83,7 @@ def evaluate_warning_impact_alignment(
     for imp in eligible_impacts:
         imp_lat = float(imp["latitude"])
         imp_lon = float(imp["longitude"])
-        imp_time = pd.to_datetime(imp["start_time"])
+        imp_time = pd.to_datetime(imp["start_time"], utc=True)
 
         best_lead_time = None
         best_warning_idx = None
@@ -91,7 +91,7 @@ def evaluate_warning_impact_alignment(
         for w_idx, w in enumerate(warnings):
             w_lat = float(w.get("latitude", imp_lat))
             w_lon = float(w.get("longitude", imp_lon))
-            w_time = pd.to_datetime(w["timestamp"])
+            w_time = pd.to_datetime(w["timestamp"], utc=True)
 
             dist = haversine_distance_km(imp_lat, imp_lon, w_lat, w_lon)
             if dist <= radius_km:

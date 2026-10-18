@@ -24,7 +24,7 @@ from app.schemas.impact_record import (
 )
 from app.core.evidence_rubric import calculate_evidence_rubric, is_authoritative_source
 from app.core.impact_evaluator import evaluate_warning_impact_alignment
-from app.core.warning_ledger import add_warning, list_warnings
+from app.core.warning_ledger import add_warning, list_warnings, reset_to_hindcast_seed
 
 router = APIRouter()
 
@@ -905,24 +905,6 @@ def export_impact_records_csv(db: Session = Depends(deps.get_db_optional)):
         headers={"Content-Disposition": "attachment; filename=chennai_impact_catalogue_verified.csv"}
     )
 
-@router.get("/{record_id}", response_model=Dict[str, Any])
-def get_impact_record(record_id: int, db: Session = Depends(deps.get_db_optional)):
-    """Retrieve full details, rubric scoring, and evidence provenance for an impact record."""
-    if db:
-        try:
-            rec = db.query(ImpactRecord).filter(ImpactRecord.id == record_id).first()
-            if rec:
-                d = {c.name: getattr(rec, c.name) for c in rec.__table__.columns}
-                return _enrich_record_with_rubric(d)
-        except Exception:
-            pass
-
-    for r in _in_memory_records:
-        if r.get("id") == record_id:
-            return _enrich_record_with_rubric(r)
-
-    raise HTTPException(status_code=404, detail=f"Impact record #{record_id} not found")
-
 @router.post("/", response_model=Dict[str, Any])
 def create_impact_record(
     record_in: ImpactRecordCreate,
@@ -973,90 +955,6 @@ def create_impact_record(
     _in_memory_records.append(stored)
     return _enrich_record_with_rubric(stored)
 
-@router.post("/{record_id}/review", response_model=Dict[str, Any])
-def review_impact_record(
-    record_id: int,
-    review_in: CuratorReviewSubmission,
-    db: Session = Depends(deps.get_db_optional)
-):
-    """
-    Curator review endpoint. Approves, rejects, or requests revision for an impact record.
-    Strictly prevents setting historical_real status without authoritative primary source.
-    """
-    record = None
-    if db:
-        try:
-            record = db.query(ImpactRecord).filter(ImpactRecord.id == record_id).first()
-        except Exception:
-            pass
-
-    record_dict = None
-    if record:
-        record_dict = {c.name: getattr(record, c.name) for c in record.__table__.columns}
-    else:
-        for r in _in_memory_records:
-            if r.get("id") == record_id:
-                record_dict = r
-                break
-
-    if not record_dict:
-        raise HTTPException(status_code=404, detail=f"Impact record #{record_id} not found")
-
-    decision = review_in.decision.lower()
-    
-    # Research integrity check: Cannot certify historical_real if source URL or authoritative org is missing
-    if decision == "approved_historical_real":
-        if not record_dict.get("source_url"):
-            raise HTTPException(
-                status_code=400,
-                detail="Research Integrity Violation: Cannot approve as historical_real without a traceable source_url."
-            )
-        if not is_authoritative_source(record_dict.get("source_org"), record_dict.get("source_name"), record_dict.get("source_url")):
-            raise HTTPException(
-                status_code=400,
-                detail="Research Integrity Violation: Source must originate from an authoritative body (CWC, IMD, GCC, TNSDMA, CMWSSB, etc.)."
-            )
-        new_status = "historical_real"
-    elif decision == "rejected":
-        new_status = "rejected"
-    elif decision == "under_review":
-        new_status = "under_review"
-    else:
-        new_status = "unverified"
-
-    now_iso = datetime.now(timezone.utc).isoformat()
-    review_log_entry = {
-        "reviewer": review_in.reviewer_name,
-        "decision": decision,
-        "timestamp": now_iso,
-        "notes": review_in.review_notes
-    }
-
-    # Update in DB or memory
-    if record and db:
-        record.reviewer_name = review_in.reviewer_name
-        record.review_timestamp = datetime.now(timezone.utc)
-        record.review_decision = decision
-        record.review_notes = review_in.review_notes
-        record.evidence_status = new_status
-        history = json.loads(record.review_history or "[]")
-        history.append(review_log_entry)
-        record.review_history = json.dumps(history)
-        db.commit()
-        db.refresh(record)
-        d = {c.name: getattr(record, c.name) for c in record.__table__.columns}
-        return _enrich_record_with_rubric(d)
-    else:
-        record_dict["reviewer_name"] = review_in.reviewer_name
-        record_dict["review_timestamp"] = now_iso
-        record_dict["review_decision"] = decision
-        record_dict["review_notes"] = review_in.review_notes
-        record_dict["evidence_status"] = new_status
-        history = json.loads(record_dict.get("review_history") or "[]")
-        history.append(review_log_entry)
-        record_dict["review_history"] = json.dumps(history)
-        return _enrich_record_with_rubric(record_dict)
-
 @router.post("/upload-attachment", response_model=Dict[str, Any])
 async def upload_evidence_attachment(
     file: UploadFile = File(...),
@@ -1098,50 +996,6 @@ async def upload_evidence_attachment(
         "mime_type": mime_type,
         "attached_to_record_id": record_id,
         "import_timestamp": datetime.now(timezone.utc).isoformat()
-    }
-
-@router.get("/{record_id}/evidence-card", response_model=Dict[str, Any])
-def export_evidence_card(record_id: int, db: Session = Depends(deps.get_db_optional)):
-    """
-    Generate an exportable evidence card in JSON, Markdown, and LaTeX formats for academic paper appendices.
-    """
-    rec = get_impact_record(record_id, db)
-    rubric = rec.get("rubric", {})
-    
-    # Generate LaTeX table row snippet
-    latex_snippet = (
-        f"% Evidence Card for {rec.get('event_id')}\n"
-        f"\\textbf{{{rec.get('event_id')}}} & "
-        f"{rec.get('zone')} & "
-        f"{str(rec.get('start_time'))[:10]} & "
-        f"{rec.get('impact_type')} & "
-        f"{rec.get('source_org') or rec.get('source_name')} & "
-        f"{rec.get('report_page') or 'N/A'} & "
-        f"{rubric.get('total_score', 'N/A')}/100 & "
-        f"{rec.get('evidence_status').upper()} \\\\"
-    )
-
-    markdown_card = (
-        f"### Evidence Card: `{rec.get('event_id')}`\n\n"
-        f"- **Event Type**: {rec.get('impact_type')} (Severity: {rec.get('severity').upper()})\n"
-        f"- **Temporal Window**: `{rec.get('start_time')}` to `{rec.get('end_time') or 'Ongoing'}` (Exact Verified: {rec.get('exact_time_verified')})\n"
-        f"- **Geographic Location**: `{rec.get('latitude')}, {rec.get('longitude')}` ({rec.get('zone')}) [Precision: {rec.get('location_precision_type')}, ±{rec.get('location_accuracy_m')}m]\n"
-        f"- **Primary Source**: [{rec.get('source_name')}]({rec.get('source_url') or '#'}) ({rec.get('source_org')})\n"
-        f"- **Citation/Ref**: `{rec.get('source_ref_id')}` | Page: `{rec.get('report_page')}`\n"
-        f"- **Quoted Passage**: *\"{rec.get('exact_passage') or rec.get('notes')}\"*\n"
-        f"- **Corroborating Source**: [{rec.get('corroborating_source_name') or 'None attached'}]({rec.get('corroborating_source_url') or '#'})\n"
-        f"- **Observed Measurements**: Flood Extent: {rec.get('observed_flood_extent_sqkm') or 'N/A'} km², Depth: {rec.get('observed_flood_depth_m') or 'N/A'} m, Road Closure: {rec.get('road_closure_duration_hours') or 'N/A'} h\n"
-        f"- **Document Hash (SHA-256)**: `{rec.get('document_hash') or 'Not hashed'}`\n"
-        f"- **Curator Review**: Decision: `{rec.get('review_decision')}` by `{rec.get('reviewer_name')}` at `{rec.get('review_timestamp')}`\n"
-        f"- **Evidence Rubric Score**: **{rubric.get('score_display')}** ({rubric.get('reason')})\n"
-    )
-
-    return {
-        "event_id": rec.get("event_id"),
-        "record": rec,
-        "latex_snippet": latex_snippet,
-        "markdown_card": markdown_card,
-        "rubric": rubric
     }
 
 @router.post("/import/csv")
@@ -1226,6 +1080,26 @@ async def import_impact_records_csv(
         "curator_note": f"{imported} records queued as 'under_review'. Use Evidence Review Dashboard to verify and approve."
     }
 
+@router.get("/warnings", response_model=List[Dict[str, Any]])
+def get_model_warnings():
+    """List reproducible warning exports available to the evaluation utility."""
+    return list_warnings()
+
+@router.post("/warnings", response_model=Dict[str, Any])
+def export_model_warning(warning: WarningEvidence):
+    """Store a warning exported by a declared model run for later evaluation."""
+    record = add_warning(warning.model_dump(mode="json"))
+    return {
+        "status": "RECORDED",
+        "warning": record,
+        "provenance_note": "Model-run warning ledger. This record is not an impact label."
+    }
+
+@router.post("/warnings/reset-hindcasts", response_model=List[Dict[str, Any]])
+def reset_hindcasts_to_default():
+    """Reset warning ledger to reproducible retrospective model hindcast warnings."""
+    return reset_to_hindcast_seed()
+
 @router.post("/evaluate", response_model=ImpactEvaluationResponse)
 def evaluate_warnings(
     req: ImpactEvaluationRequest,
@@ -1246,6 +1120,8 @@ def evaluate_warnings(
 
     submitted_warnings = [warning.model_dump(mode="json") for warning in req.warnings]
     ledger_warnings = list_warnings() if not submitted_warnings else []
+    if not submitted_warnings and not ledger_warnings:
+        ledger_warnings = reset_to_hindcast_seed()
     warnings = submitted_warnings or ledger_warnings
 
     return evaluate_warning_impact_alignment(
@@ -1253,21 +1129,6 @@ def evaluate_warnings(
         warnings=[warning for warning in warnings if warning.get("probability", 0) >= req.warning_probability_threshold],
         radius_km=req.spatial_radius_km
     )
-
-@router.post("/warnings", response_model=Dict[str, Any])
-def export_model_warning(warning: WarningEvidence):
-    """Store a warning exported by a declared model run for later evaluation."""
-    record = add_warning(warning.model_dump(mode="json"))
-    return {
-        "status": "RECORDED",
-        "warning": record,
-        "provenance_note": "Model-run warning ledger. This record is not an impact label."
-    }
-
-@router.get("/warnings", response_model=List[Dict[str, Any]])
-def get_model_warnings():
-    """List reproducible warning exports available to the evaluation utility."""
-    return list_warnings()
 
 @router.get("/templates/observed-flood")
 def download_observed_flood_template() -> Response:
@@ -1359,4 +1220,151 @@ def validate_scenario_against_observed_flood(req: ObservedFloodValidationRequest
         limitation_disclaimer=disclaimer,
         provenance_badge=badge
     )
+
+@router.get("/{record_id}", response_model=Dict[str, Any])
+def get_impact_record(record_id: int, db: Session = Depends(deps.get_db_optional)):
+    """Retrieve full details, rubric scoring, and evidence provenance for an impact record."""
+    if db:
+        try:
+            rec = db.query(ImpactRecord).filter(ImpactRecord.id == record_id).first()
+            if rec:
+                d = {c.name: getattr(rec, c.name) for c in rec.__table__.columns}
+                return _enrich_record_with_rubric(d)
+        except Exception:
+            pass
+
+    for r in _in_memory_records:
+        if r.get("id") == record_id:
+            return _enrich_record_with_rubric(r)
+
+    raise HTTPException(status_code=404, detail=f"Impact record #{record_id} not found")
+
+@router.post("/{record_id}/review", response_model=Dict[str, Any])
+def review_impact_record(
+    record_id: int,
+    review_in: CuratorReviewSubmission,
+    db: Session = Depends(deps.get_db_optional)
+):
+    """
+    Curator review endpoint. Approves, rejects, or requests revision for an impact record.
+    Strictly prevents setting historical_real status without authoritative primary source.
+    """
+    record = None
+    if db:
+        try:
+            record = db.query(ImpactRecord).filter(ImpactRecord.id == record_id).first()
+        except Exception:
+            pass
+
+    record_dict = None
+    if record:
+        record_dict = {c.name: getattr(record, c.name) for c in record.__table__.columns}
+    else:
+        for r in _in_memory_records:
+            if r.get("id") == record_id:
+                record_dict = r
+                break
+
+    if not record_dict:
+        raise HTTPException(status_code=404, detail=f"Impact record #{record_id} not found")
+
+    decision = review_in.decision.lower()
+    
+    # Research integrity check: Cannot certify historical_real if source URL or authoritative org is missing
+    if decision == "approved_historical_real":
+        if not record_dict.get("source_url"):
+            raise HTTPException(
+                status_code=400,
+                detail="Research Integrity Violation: Cannot approve as historical_real without a traceable source_url."
+            )
+        if not is_authoritative_source(record_dict.get("source_org"), record_dict.get("source_name"), record_dict.get("source_url")):
+            raise HTTPException(
+                status_code=400,
+                detail="Research Integrity Violation: Source must originate from an authoritative body (CWC, IMD, GCC, TNSDMA, CMWSSB, etc.)."
+            )
+        new_status = "historical_real"
+    elif decision == "rejected":
+        new_status = "rejected"
+    elif decision == "under_review":
+        new_status = "under_review"
+    else:
+        new_status = "unverified"
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    review_log_entry = {
+        "reviewer": review_in.reviewer_name,
+        "decision": decision,
+        "timestamp": now_iso,
+        "notes": review_in.review_notes
+    }
+
+    # Update in DB or memory
+    if record and db:
+        record.reviewer_name = review_in.reviewer_name
+        record.review_timestamp = datetime.now(timezone.utc)
+        record.review_decision = decision
+        record.review_notes = review_in.review_notes
+        record.evidence_status = new_status
+        history = json.loads(record.review_history or "[]")
+        history.append(review_log_entry)
+        record.review_history = json.dumps(history)
+        db.commit()
+        db.refresh(record)
+        d = {c.name: getattr(record, c.name) for c in record.__table__.columns}
+        return _enrich_record_with_rubric(d)
+    else:
+        record_dict["reviewer_name"] = review_in.reviewer_name
+        record_dict["review_timestamp"] = now_iso
+        record_dict["review_decision"] = decision
+        record_dict["review_notes"] = review_in.review_notes
+        record_dict["evidence_status"] = new_status
+        history = json.loads(record_dict.get("review_history") or "[]")
+        history.append(review_log_entry)
+        record_dict["review_history"] = json.dumps(history)
+        return _enrich_record_with_rubric(record_dict)
+
+@router.get("/{record_id}/evidence-card", response_model=Dict[str, Any])
+def export_evidence_card(record_id: int, db: Session = Depends(deps.get_db_optional)):
+    """
+    Generate an exportable evidence card in JSON, Markdown, and LaTeX formats for academic paper appendices.
+    """
+    rec = get_impact_record(record_id, db)
+    rubric = rec.get("rubric", {})
+    
+    # Generate LaTeX table row snippet
+    latex_snippet = (
+        f"% Evidence Card for {rec.get('event_id')}\n"
+        f"\\textbf{{{rec.get('event_id')}}} & "
+        f"{rec.get('zone')} & "
+        f"{str(rec.get('start_time'))[:10]} & "
+        f"{rec.get('impact_type')} & "
+        f"{rec.get('source_org') or rec.get('source_name')} & "
+        f"{rec.get('report_page') or 'N/A'} & "
+        f"{rubric.get('total_score', 'N/A')}/100 & "
+        f"{rec.get('evidence_status').upper()} \\\\"
+    )
+
+    markdown_card = (
+        f"### Evidence Card: `{rec.get('event_id')}`\n\n"
+        f"- **Event Type**: {rec.get('impact_type')} (Severity: {rec.get('severity').upper()})\n"
+        f"- **Temporal Window**: `{rec.get('start_time')}` to `{rec.get('end_time') or 'Ongoing'}` (Exact Verified: {rec.get('exact_time_verified')})\n"
+        f"- **Geographic Location**: `{rec.get('latitude')}, {rec.get('longitude')}` ({rec.get('zone')}) [Precision: {rec.get('location_precision_type')}, ±{rec.get('location_accuracy_m')}m]\n"
+        f"- **Primary Source**: [{rec.get('source_name')}]({rec.get('source_url') or '#'}) ({rec.get('source_org')})\n"
+        f"- **Citation/Ref**: `{rec.get('source_ref_id')}` | Page: `{rec.get('report_page')}`\n"
+        f"- **Quoted Passage**: *\"{rec.get('exact_passage') or rec.get('notes')}\"*\n"
+        f"- **Corroborating Source**: [{rec.get('corroborating_source_name') or 'None attached'}]({rec.get('corroborating_source_url') or '#'})\n"
+        f"- **Observed Measurements**: Flood Extent: {rec.get('observed_flood_extent_sqkm') or 'N/A'} km², Depth: {rec.get('observed_flood_depth_m') or 'N/A'} m, Road Closure: {rec.get('road_closure_duration_hours') or 'N/A'} h\n"
+        f"- **Document Hash (SHA-256)**: `{rec.get('document_hash') or 'Not hashed'}`\n"
+        f"- **Curator Review**: Decision: `{rec.get('review_decision')}` by `{rec.get('reviewer_name')}` at `{rec.get('review_timestamp')}`\n"
+        f"- **Evidence Rubric Score**: **{rubric.get('score_display')}** ({rubric.get('reason')})\n"
+    )
+
+    return {
+        "event_id": rec.get("event_id"),
+        "record": rec,
+        "latex_snippet": latex_snippet,
+        "markdown_card": markdown_card,
+        "rubric": rubric
+    }
+
 

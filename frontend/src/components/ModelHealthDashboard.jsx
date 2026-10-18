@@ -89,7 +89,7 @@ export default function ModelHealthDashboard() {
       const res = await fetch(`${API_URL}/api/model-health/sync-live`, { method: 'POST' });
       const json = await res.json();
       if (res.ok) {
-        setSyncNotice(`Synchronized ${json.ingested_observations_count} live observation intervals into model surveillance.`);
+        setSyncNotice(json.note || `Recorded ${json.ingested_observations_count} provider-observed live weather snapshot.`);
         await fetchModelHealth(selectedWindow);
       } else {
         setSyncNotice('Unable to sync live telemetry from external feeds.');
@@ -341,14 +341,14 @@ export default function ModelHealthDashboard() {
                   {(prediction_drift.live_median_prob * 100).toFixed(1)}%
                 </span>
                 <span className="text-xs font-medium text-slate-500">
-                  (Hist: {prediction_drift.historical_median_prob != null && !isNaN(prediction_drift.historical_median_prob) ? `${(prediction_drift.historical_median_prob * 100).toFixed(1)}%` : '5.4%'})
+                  (Hist: {prediction_drift.historical_median_prob != null && !isNaN(prediction_drift.historical_median_prob) ? `${(prediction_drift.historical_median_prob * 100).toFixed(1)}%` : 'Awaiting verified baseline'})
                 </span>
               </>
             ) : (
               <div>
                 <span className="text-xl font-bold text-slate-700">Awaiting History</span>
                 <span className="block text-[11px] font-medium text-slate-400 mt-0.5">
-                  Hist Baseline: {prediction_drift.historical_median_prob != null && !isNaN(prediction_drift.historical_median_prob) ? `${(prediction_drift.historical_median_prob * 100).toFixed(1)}%` : '5.4%'}
+                  Hist Baseline: {prediction_drift.historical_median_prob != null && !isNaN(prediction_drift.historical_median_prob) ? `${(prediction_drift.historical_median_prob * 100).toFixed(1)}%` : 'Awaiting verified baseline'}
                 </span>
               </div>
             )}
