@@ -1,0 +1,398 @@
+\documentclass[journal]{IEEEtran}
+\usepackage{amsmath,amssymb,booktabs,graphicx,multirow,array,url}
+\usepackage{xcolor}
+\usepackage{balance}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\title{ClimateTwin: An Uncertainty-Aware Prototype for Multi-Hazard Urban Risk Monitoring Under Sparse and Faulty Sensing in Chennai}
+\author{Gokul~R. and Vishvanth~S.
+\thanks{The authors are with the School of Computer Science and Engineering, Vellore Institute of Technology, Chennai, India. Correspondence: \{gokul.r2024, vishvanth.s2024\}@vitstudent.ac.in.}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Tropical coastal cities experience interacting hydro-meteorological hazards that can challenge water, transport, health, and emergency-response systems. Yet many urban monitoring platforms provide isolated hazard displays or point forecasts without expressing uncertainty, data provenance, or the limits of their infrastructure-impact evidence. This paper presents ClimateTwin, an uncertainty-aware prototype for multi-hazard urban risk monitoring in Greater Chennai, India. The system integrates historical reservoir records, satellite precipitation, weather observations, terrain data, open geospatial layers, and live weather feeds through a FastAPI service and web dashboard. It supports quality-aware telemetry ingestion, a Newtonian-nudging baseline, an Ensemble Kalman Filter (EnKF), conventional machine-learning baselines, quantile forecasting, compound-risk logic, and scenario replay. On the available chronological flood benchmark, logistic regression, random forest, XGBoost, and LSTM models yield preliminary event-label performance estimates, while graph-based experiments show that an incomplete typed topology does not yet improve over an LSTM-only baseline. EnKF experiments show improved synthetic state-estimation error relative to a no-assimilation baseline under selected fault scenarios, but use a simplified persistence process model. The paper therefore distinguishes real environmental data from proxy topology, synthetic domain-shift, simulated fault, and simulated decision experiments. The contribution is a reproducible evaluation workflow for testing how uncertainty, data quality, and evidence provenance affect urban risk warnings, rather than a claim of a field-validated municipal digital twin. The study identifies the real impact labels, verified infrastructure dependencies, and stakeholder validation required for operational deployment.
+\end{abstract}
+
+\begin{IEEEkeywords}
+urban digital twin, multi-hazard early warning, Chennai, uncertainty quantification, Ensemble Kalman Filter, graph neural network, climate resilience, data provenance.
+\end{IEEEkeywords}
+
+\section{Introduction}
+Coastal tropical megacities are exposed to recurrent and interacting climate hazards. Greater Chennai is an important example: intense northeast-monsoon rainfall, low-relief drainage conditions, reservoir-storage stress, humid heat, drought, and localized fire risk may occur over short or overlapping time scales. These hazards are not merely a collection of independent forecast targets. Heavy rainfall over saturated catchments can increase flood risk; wind and inundation can affect drainage operations; drought changes water-storage operating margins; and prolonged heat can increase electricity demand and public-health exposure. A warning system that reports each driver separately can fail to communicate the compound conditions that matter to emergency managers.
+
+Urban digital twins are often proposed as an integration layer for this problem. They combine observations, city representations, models, simulation, and decision support. However, the term is sometimes used for a static visual model, a dashboard, or an isolated machine-learning service. Recent reviews emphasize that a useful urban twin must confront data interoperability, synchronization, governance, uncertainty, multiple spatial scales, and the translation of forecasts into action \cite{macatulad2024,zhu2025,omrany2025}. Similarly, multi-hazard early-warning guidance requires risk knowledge, monitoring and forecasting, warning communication, and preparedness to respond; a technically accurate probability alone is not an impact-based warning \cite{undrr2024,wmo2024}.
+
+This paper presents ClimateTwin as a research prototype and reproducible evaluation workflow rather than as a deployed municipal control system. It integrates real historical and live environmental sources with prototype models for risk estimation, uncertainty display, data assimilation, and decision support. The study is motivated by the following question:
+\begin{quote}
+\emph{How can a provenance-aware urban risk-twin workflow quantify the effect of sparse, faulty, and changing observations on multi-hazard warnings in a data-constrained coastal city?}
+\end{quote}
+
+The paper makes four contributions. First, it defines a data-provenance architecture that distinguishes live, historical, proxy, synthetic, and fallback values. Second, it implements and evaluates a quality-aware assimilation layer, including a Newtonian-nudging baseline and EnKF prototype. Third, it compares conventional baselines, temporal models, and graph-temporal prototypes while retaining negative graph-model results. Fourth, it provides a reproducible protocol for chronological, event-level, uncertainty, and fault-robustness evaluation.
+
+The scope is deliberately bounded. ClimateTwin does not yet contain a calibrated 2-D hydrodynamic inundation model, verified pump and substation topology, observed infrastructure-failure chains, real cross-city transfer data, or an ethics-approved operator study. Accordingly, its compound-risk, cascade, decision-value, and human-factor components are interpreted as prototype or simulation studies where real evidence is unavailable.
+
+\section{Related Work and Research Gap}
+\subsection{Urban Digital Twins for Disaster Risk Management}
+Digital-twin research has expanded from asset monitoring toward city-scale planning and resilience. A systematic review by Macatulad and Biljecki identifies multi-dimensional, multi-scale, multi-stakeholder, multi-hazard, and multi-perspective challenges in urban disaster-risk management \cite{macatulad2024}. Zhu and Jin similarly identify the promise of data-driven urban twins for critical infrastructure, while noting the need to connect frameworks to real operational data and implementation settings \cite{zhu2025}. Ghaffarian proposes a ``digital risk twin'' that combines automated and manual observations with human-in-the-loop decisions for disaster management \cite{ghaffarian2025}.
+
+These studies demonstrate that an urban dashboard or virtual city representation alone is insufficient novelty. A publishable contribution must specify what is synchronized, how uncertainty is represented, what impact is forecast, and how the system is validated.
+
+\subsection{Impact-Based Multi-Hazard Warning}
+Multi-hazard warning systems increasingly shift from hazard intensity toward expected impact. UNDRR notes that impact-based forecasting is essential for converting forecasts into actionable warnings \cite{undrr2024}. The WMO risk-knowledge guidance frames impacts as a product of hazard, exposure, and vulnerability, and emphasizes impact chains as a way to link causes to consequences \cite{wmo2024}. This creates a specific gap for data-constrained cities: environmental observations may be available, while verified road closures, pump failures, power outages, and service-disruption records are incomplete.
+
+ClimateTwin addresses this gap partially. It can associate hazard signals with asset criticality, terrain, and proxy exposure, but its infrastructure-impact labels are not yet sufficiently complete to support a claim of operational impact forecasting. This limitation defines the most important next research phase.
+
+\subsection{Data Assimilation, Probabilistic Forecasting, and Graph Models}
+The EnKF is a well-established approach for high-dimensional geophysical state estimation \cite{evensen2003,houtekamer2016}. Its novelty in an urban-twin setting does not arise from the update equation alone; it must come from the state definition, fault treatment, observation model, and measured operational benefit. Graph neural networks and recurrent networks are likewise established for spatiotemporal forecasting \cite{kipf2017,seo2018}. Recent flood research increasingly integrates physical constraints into graph surrogates because purely data-driven models can violate flow or mass-balance behavior \cite{hydrograph2025}.
+
+ClimateTwin therefore treats graph forecasting as a hypothesis, not an assumed improvement. Its currently available physical GIS graph includes roads, waterways, buildings, and elevation layers, but lacks verified active power and pump networks. Any superiority claim for graph-based infrastructure forecasting would be premature until those dependencies are obtained and tested.
+
+\subsection{Research Gap Statement}
+The literature supports the following focused gap: few reproducible urban risk-twin prototypes demonstrate an evidence-traceable chain from environmental observation to quality-aware state estimation, calibrated probabilistic warning, and impact-oriented reasoning under sparse or faulty sensing. ClimateTwin contributes an evaluation workflow for this chain, while exposing the boundary between real observations and simulated operational layers.
+
+\section{System Architecture and Data Provenance}
+\subsection{Architecture}
+ClimateTwin is organized into five layers. The acquisition layer obtains weather, rainfall, reservoir, terrain, geospatial, and optional hotspot information. The telemetry layer validates payload type, timestamp, plausibility, staleness, duplication, and innovation. The state layer applies nudging or EnKF updates. The analytics layer includes hazard models, uncertainty modules, compound-risk logic, and model monitoring. The presentation layer provides maps, time series, alerts, replay, and explanation views.
+
+The principal engineering interfaces are a FastAPI backend, SQLAlchemy persistence, MQTT-compatible ingestion, and a React/Vite dashboard. This implementation supports repeatable experiments but does not by itself establish real-time municipal operations.
+
+\subsection{Data Status Taxonomy}
+Every experiment should record its evidence status. Table~\ref{tab:data} defines the distinction that governs interpretation throughout this paper.
+
+\begin{table}[t]
+\caption{Evidence provenance used in ClimateTwin.}
+\label{tab:data}
+\centering
+\footnotesize
+\begin{tabular}{p{0.22\columnwidth}p{0.67\columnwidth}}
+\toprule
+Class & Examples and allowed interpretation \\
+\midrule
+Live/external & Open-Meteo weather and, when configured, NASA FIRMS observations. These are external observations, not physical municipal sensors. \\
+Historical real & CMWSSB reservoir records, IMERG precipitation, NOAA weather, Copernicus DEM, and documented flood inventory records. \\
+Proxy & OpenStreetMap roads, waterways, and buildings used as incomplete exposure or connectivity layers. \\
+Synthetic/simulated & Fault injection, generated topology, city-transfer shift, operator costs, and scenario replay settings. These support method testing only. \\
+Rule-based & Thresholds and compound-risk coefficients that have not been fitted to observed impact outcomes. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The implementation uses a fallback weather generator when an external weather request fails. This safeguard maintains interface continuity, but fallback output must be labelled synthetic and never pooled with live-data evidence.
+
+\section{Hazard and Risk Formulations}
+\subsection{Flood and Reservoir Stress}
+The available flood workflow uses historical precipitation, reservoir-storage indicators, weather covariates, terrain proxies, and learned or rule-based risk logic. Let $\mathbf{x}_t$ denote features available at time $t$, including rainfall accumulations, meteorological variables, reservoir levels, and rates of storage change. A predictive model estimates $P(Y_{t+H}=1\mid\mathbf{x}_t)$ for a defined future horizon $H$. The target $Y$ must be explicitly documented as a flood-event or impact label; it must not be inferred from future information included in the feature vector.
+
+The present implementation is not a 2-D hydraulic flood model. Hence, it must not claim a raster water-depth field $h(x,y,t)$ or equivalence to SWMM, HEC-RAS 2-D, or MIKE Urban. A future hydrodynamic extension could solve a mass-conservation equation of the form
+\begin{equation}
+\frac{\partial h}{\partial t}+\frac{\partial (uh)}{\partial x}+\frac{\partial (vh)}{\partial y}=R-I,
+\label{eq:mass}
+\end{equation}
+where $h$ is depth, $u$ and $v$ are depth-averaged velocities, $R$ is rainfall input, and $I$ is infiltration or drainage loss. Equation~\eqref{eq:mass} is a future-model formulation, not an implemented validation result.
+
+\subsection{Heat, Drought, Wildfire, and Extreme Rainfall}
+The prototype also supports heat, drought, wildfire, and extreme-rainfall indicator engines. Heat indicators use air temperature, humidity, apparent temperature, and threshold-based severity bands. Drought logic combines storage depletion, moisture-related information when available, and antecedent rainfall deficits into a multi-indicator drought index:
+\begin{equation}
+\mathrm{MIDI}=w_s\left(1-\frac{\theta_{root}}{\theta_{fc}}\right)+w_r\left(1-\frac{\sum_{i=1}^4 S_i(t)}{S_{max}}\right)+w_pD_{30}(t),
+\label{eq:midi}
+\end{equation}
+where $S_i$ are reservoir storages and $D_{30}$ is a 30-day precipitation deficit. The weights require calibration or expert-prior documentation before being interpreted as quantitative physical parameters.
+
+Wildfire and convective-rainfall indicators may use fire-weather and atmospheric-instability covariates. These engines should be described as screening indicators unless validated against local hotspot or impact records. A threshold such as CAPE plus rainfall intensity is therefore an interpretable warning rule, not a verified cloudburst probability.
+
+\subsection{Compound Risk}
+The prototype combines standardized hazard components $H_k$ using
+\begin{equation}
+\mathrm{CRS}=\sum_k w_kH_k+\sum_{i<j}\gamma_{ij}H_iH_j.
+\label{eq:crs}
+\end{equation}
+The first term represents marginal hazard contributions and the second represents pairwise interactions. The equation makes the non-independence assumption explicit; however, expert-set $w_k$ and $\gamma_{ij}$ produce a risk index, not a calibrated failure probability. A probability interpretation requires fitting the interaction model to documented impact outcomes, then reporting log loss, Brier score, calibration curves, and uncertainty.
+
+\section{Quality-Aware State Estimation and Forecasting}
+\subsection{Newtonian Nudging and EnKF}
+The nudging baseline combines a background state $\mathbf{x}^{b}$ and observation $\mathbf{y}$ as
+\begin{equation}
+\mathbf{x}^{a}=(1-\alpha)\mathbf{x}^{b}+\alpha\mathbf{y},
+\label{eq:nudge}
+\end{equation}
+where $\alpha$ is adjusted by data-quality state. The EnKF maintains an ensemble $\{\mathbf{x}_i^f\}_{i=1}^{N}$ and computes
+\begin{align}
+\mathbf{x}_i^a &= \mathbf{x}_i^f+\mathbf{K}(\mathbf{y}+\boldsymbol{\epsilon}_i-\mathbf{H}\mathbf{x}_i^f),\\
+\mathbf{K} &= \mathbf{P}^f\mathbf{H}^{\top}(\mathbf{H}\mathbf{P}^f\mathbf{H}^{\top}+\mathbf{R})^{-1}.
+\label{eq:enkf}
+\end{align}
+Here, $\mathbf{H}$ masks unavailable observations, $\mathbf{R}$ represents observation error, and fault flags can inflate entries of $\mathbf{R}$. The current process model is persistence plus process noise with non-negativity clipping. It is useful for evaluating missing-observation handling but is not a hydrodynamic process model.
+
+\subsection{Quantile Graph-Temporal Surrogate}
+Assets and monitoring locations may be represented as a typed directed graph $G=(V,E)$. A multi-relational graph convolution maps node features to embeddings, and an LSTM propagates temporal state:
+\begin{align}
+\mathbf{h}_{v,t}&=\mathrm{GNN}(\mathbf{x}_{v,t},\{\mathbf{x}_{u,t}:u\in\mathcal{N}(v)\}),\\
+\mathbf{z}_{v,t}&=\mathrm{LSTM}(\mathbf{h}_{v,t},\mathbf{z}_{v,t-1}).
+\end{align}
+The quantile head produces $\hat y^{(0.1)}$, $\hat y^{(0.5)}$, and $\hat y^{(0.9)}$. The training objective is
+\begin{align}
+\mathcal{L}=&\sum_{\tau\in\{0.1,0.5,0.9\}}\max\{\tau e_\tau,(\tau-1)e_\tau\}\\
+&+\lambda\left[\mathrm{ReLU}(\hat y^{(0.1)}-\hat y^{(0.5)})+\mathrm{ReLU}(\hat y^{(0.5)}-\hat y^{(0.9)})\right],
+\label{eq:pinball}
+\end{align}
+where $e_\tau=y-\hat y^{(\tau)}$. The second term penalizes quantile crossing. Quantile interval validity should be evaluated with empirical coverage, width, weighted interval score (WIS), continuous ranked probability score (CRPS), and reliability diagnostics, particularly on rare events.
+
+\section{Experimental Protocol}
+The protocol uses chronological split boundaries to avoid temporal leakage. The available uncertainty artifact records a training period from 2015--2016, a 2017 calibration period, and a holdout period extending to December 2020. The event-validation artifact lists ten overlapping multi-sensor historical flood events, of which only two occur in an independent 2018--2020 holdout. This sample size requires cautious event-level interpretation.
+
+The baseline interface evaluates persistence, physics/threshold logic, logistic regression, random forest, XGBoost, and LSTM models on the same labelled split. Spatial GNN baseline values are unavailable because the required spatial telemetry/topology is incomplete; such missing values must remain missing rather than be replaced by target metrics. Fault experiments inject missing, biased, stale, or stuck measurements. City-transfer experiments use a synthetic covariate-shift setting and are explicitly not cross-city validation.
+
+\subsection{Feature Maturity Analysis}
+The project contains more features than can be treated as equal scientific contributions. Table~\ref{tab:maturity} classifies each feature by maturity. This classification is central to the paper because it prevents an implementation artifact from being mistaken for validated operational evidence. A feature is \emph{implemented} when code is present and testable. It is \emph{experimentally evaluated} only when the result is generated on a declared dataset and split. It is \emph{operationally validated} only when a relevant external stakeholder or measured real-world outcome confirms its utility.
+
+\begin{table*}[t]
+\caption{ClimateTwin feature maturity and the evidence required for a stronger journal claim.}
+\label{tab:maturity}
+\centering\footnotesize
+\begin{tabular}{p{0.18\textwidth}p{0.18\textwidth}p{0.26\textwidth}p{0.27\textwidth}}
+\toprule
+Feature & Current maturity & Current evidence boundary & Evidence required for publication-grade claim \\
+\midrule
+Live weather ingestion & Implemented & Externally sourced observations; API fallback is synthetic & Uptime, provenance, latency, and fallback-rate monitoring \\
+Historical flood benchmark & Experimentally evaluated & Limited eligible event count and small independent holdout & Frozen labels, exact event list, independent rerun, event-level confidence intervals \\
+Nudging and EnKF & Prototype experiment & Persistence process model and simulated sensor faults & Real observation-error characterization and state-estimation validation \\
+Conventional ML and LSTM & Preliminary benchmark & Chronological split artifact; impact label definition must remain explicit & Clean rerun, fixed threshold policy, independent impact outcome \\
+GNN-LSTM & Prototype experiment & Incomplete/proxy topology; currently worse than LSTM-only & Verified typed dependencies and fair graph ablation on real topology \\
+Compound risk score & Implemented rule/learned hybrid & Interactions partly expert-defined or synthetic & Calibration against observed compound impacts and probability diagnostics \\
+Cascade network & Simulation prototype & Unverified pump, substation, and failure links & Observed dependency/failure records and time-to-failure validation \\
+Replay and decision support & Implemented interface & Scenario comparisons and simulated costs & Documented operations, stakeholder review, and post-event outcome analysis \\
+City transfer & Synthetic domain-shift experiment & Not real Chennai-to-city-B validation & Comparable real second-city data and preregistered transfer protocol \\
+Security and governance & Prototype controls & Local harness and software checks & Threat model, red-team tests, incident logging, and deployment controls \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Evaluation Metrics and Statistical Reporting}
+Point-wise accuracy alone is inadequate for rare urban hazards. For a binary event forecast, probability of detection (POD) and false-alarm ratio (FAR) are defined as
+\begin{equation}
+\mathrm{POD}=\frac{TP}{TP+FN},\qquad \mathrm{FAR}=\frac{FP}{TP+FP},
+\label{eq:podfar}
+\end{equation}
+where $TP$, $FP$, and $FN$ denote true positives, false positives, and false negatives. Each model should additionally report precision, recall, F1, event-level detection, warning lead time, and the number of positive events in each split. A warning is counted only if it crosses its fixed threshold before the documented event start; post-event alerts do not contribute to lead time.
+
+Probabilistic outputs should be assessed with the Brier score
+\begin{equation}
+\mathrm{BS}=\frac{1}{N}\sum_{i=1}^{N}(p_i-y_i)^2,
+\label{eq:brier}
+\end{equation}
+as well as reliability diagrams and expected calibration error. Quantile intervals should report empirical coverage
+\begin{equation}
+\widehat{C}=\frac{1}{N}\sum_{i=1}^{N}\mathbb{I}\{\hat y_i^{(0.1)}\leq y_i\leq\hat y_i^{(0.9)}\},
+\label{eq:coverage}
+\end{equation}
+and mean interval width. Coverage must be reported for the full test period and separately for extreme-event windows. Wide intervals can attain nominal coverage without providing operationally useful information; sharpness is therefore reported alongside coverage.
+
+For models compared on the same event set, uncertainty intervals should be obtained through block bootstrap or event bootstrap rather than independent row resampling. Statistical tests must respect serial dependence. When samples are insufficient for a reliable hypothesis test, exact counts and uncertainty intervals are more honest than a nominal $p$-value.
+
+\subsection{Fault, Drift, and Latency Protocol}
+The fault harness should enumerate each injected condition: random missingness, burst missingness, stuck-at values, additive bias, stale timestamps, delay, duplicate delivery, out-of-order delivery, corrupted values, and total source outage. For each condition $q$, performance degradation is reported as
+\begin{equation}
+\Delta M(q)=M(\text{clean})-M(q),
+\label{eq:degradation}
+\end{equation}
+where $M$ may be F1, POD, calibration, latency, or utility. A system is not robust merely because it detects a fault; it must safely reject, downweight, reconstruct, or communicate the consequence of a fault.
+
+Drift monitoring compares the current feature distribution with a reference distribution using a predeclared statistic such as population stability index, Kolmogorov--Smirnov distance, or Wasserstein distance. A drift trigger must define its action: log-only, recalibration, model retraining, or human review. Automatic retraining should not silently replace a production model without versioning, offline validation, and rollback capability.
+
+\subsection{Research Questions and Falsifiable Hypotheses}
+The following research questions make the study falsifiable rather than feature-driven:
+\begin{enumerate}
+\item \textbf{RQ1:} Does quality-aware assimilation reduce state-estimation error compared with no assimilation and nudging under the stated observation conditions?
+\item \textbf{RQ2:} Do quantile forecasts remain calibrated during extreme rainfall, missing observations, and distribution shift?
+\item \textbf{RQ3:} Does a provenance-tracked physical graph improve impact prediction over an LSTM-only model, or does incomplete topology degrade performance?
+\item \textbf{RQ4:} Do compound interactions improve impact-warning calibration relative to additive risk logic?
+\item \textbf{RQ5:} Can uncertainty-aware alerts reduce simulated expected regret without increasing unacceptable false-alert burden?
+\end{enumerate}
+For each question, the null result is informative. In particular, failure of a graph model to improve over LSTM is evidence that the available graph does not yet encode useful predictive dependencies.
+
+\section{Preliminary Results and Evidence Boundaries}
+\subsection{Chronological Baselines}
+Table~\ref{tab:base} reproduces the available baseline artifact. These values should be regenerated from a clean environment before submission. They are preliminary benchmark values, not evidence of a field-deployed warning service.
+
+\begin{table*}[t]
+\caption{Preliminary chronological baseline results from the repository artifact. Confidence intervals shown for F1 and POD are bootstrap intervals reported by the experiment.}
+\label{tab:base}
+\centering\footnotesize
+\begin{tabular}{lrrrrrrrrrr}
+\toprule
+Model & F1 & POD & FAR & MAE & RMSE & Threshold & TP & FN & False alarms & Lead time \\
+\midrule
+Persistence & 0.471 [0.414--0.519] & 0.783 [0.713--0.838] & 0.663 & 0.714 & 0.903 & 0.850 & 137 & 38 & 270 & 24 h \\
+Physics threshold & 0.000 & 0.000 & 0.000 & 0.088 & 0.293 & 0.500 & 0 & 175 & 0 & 24 h \\
+Logistic regression & 0.860 [0.828--0.900] & 0.891 [0.850--0.937] & 0.170 & 0.062 & 0.187 & 0.850 & 156 & 19 & 32 & 24 h \\
+Random forest & 0.824 [0.785--0.867] & 0.880 [0.833--0.921] & 0.226 & 0.059 & 0.164 & 0.600 & 154 & 21 & 45 & 24 h \\
+XGBoost & 0.834 [0.788--0.866] & 0.874 [0.826--0.918] & 0.203 & 0.034 & 0.162 & 0.600 & 153 & 22 & 39 & 24 h \\
+LSTM & 0.851 [0.808--0.886] & 0.897 [0.846--0.943] & 0.191 & 0.098 & 0.206 & 0.750 & 157 & 18 & 37 & 24 h \\
+GNN spatial & -- & -- & -- & -- & -- & -- & -- & -- & -- & Not available \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The table does not support the claim that all static machine-learning models ``collapse'' under chronological testing. Logistic regression, random forest, XGBoost, and LSTM show nonzero values in the recorded artifact. The scientific question is instead whether improvements persist under independent event labels, extreme events, and data-quality degradation.
+
+\subsection{EnKF Experiments}
+In the available controlled experiment with no dropped sensors, the no-assimilation RMSE was 177.03, nudging RMSE was 220.52, and EnKF RMSE ranged from 120.42 to 155.81 as ensemble size varied from 10 to 500. Under simulated sensor loss, results degrade and are not uniformly favorable. For example, the recorded EnKF RMSE exceeds the no-assimilation RMSE when multiple sensors are removed. This finding is valuable: it shows that an EnKF cannot compensate automatically for uninformative or structurally missing observations when the forecast process is simplified.
+
+\subsection{Graph-Temporal Ablation}
+The available GNN-LSTM ablation has zero quantile-crossing violations, but the LSTM-only configuration achieves the lowest reported P50 RMSE (0.3904). The typed, assimilated GNN-LSTM reports P50 RMSE 0.9785. Therefore, the current evidence does not support a graph-model superiority claim. The likely causes include incomplete physical topology, synthetic graph construction, small or nonrepresentative node features, and a mismatch between topology and the prediction target. A realistic next experiment must compare a provenance-tracked road/waterway graph, a synthetic graph, and LSTM-only on identical samples and training budgets.
+
+\subsection{Uncertainty and Historical Events}
+The repository's uncertainty report records Platt-scaled Brier score reduction from 0.0546 to 0.0275 and nominal 90\% interval coverage of 1.00, with mean interval width 0.7832, on the recorded split. Complete WIS, CRPS, sharpness, and extreme-event-only calibration should be included before journal submission. Historical validation reports ten eligible events, a reported 100\% detection rate, and median warning lead time of 144 h; however, only two events are independent holdout events. These event results should therefore be presented as preliminary and accompanied by exact event dates, label criteria, and uncertainty intervals.
+
+\section{Counterfactual Replay, Governance, and Decision Support}
+ClimateTwin provides a replay interface for historical episodes and scenario perturbation. This is useful for training and hypothesis testing, but replay is not yet a causal counterfactual model. A statement such as ``earlier gate discharge would have saved a specified number of lives or rupees'' requires validated discharge records, a calibrated hydrodynamic model, exposure data, a vulnerability model, and an explicit causal design. Those requirements are not met by the current repository.
+
+A future intervention module could formulate a constrained model-predictive-control problem:
+\begin{equation}
+\min_{\{u_t\}_{t=1}^{T}}\sum_{t=1}^{T}\left[w_f\,\mathcal{R}_{flood}(\mathbf{x}_t)+w_s\,\mathcal{R}_{scarcity}(\mathbf{x}_t)+w_u\|u_t-u_{t-1}\|_2^2\right],
+\label{eq:mpc}
+\end{equation}
+subject to storage dynamics, gate limits, rate-of-change limits, downstream channel capacity, and verified operational constraints. Equation~\eqref{eq:mpc} is a proposed extension. Any output prior to validation should be described as simulation-based decision support, not an operational dam-release recommendation.
+
+The existing governance components---model registry, audit-oriented interfaces, drift metrics, quality gates, and role-based dashboard controls---provide a useful foundation. A deployment study should additionally record model version, input provenance, alert acknowledgement, override rationale, latency, and post-event outcome. Human-in-the-loop workload metrics generated synthetically must not be represented as an operator study.
+
+\section{Proposed Publication-Grade Extensions}
+This section defines the next set of modules that should be implemented before the system is described as an impact-oriented urban risk twin. They are design specifications and evaluation requirements; they are not claimed as results in this paper. The additions are deliberately selected to strengthen one coherent chain---observation, state estimation, inundation or impact, intervention, and accountable warning---rather than to add unrelated dashboard functions.
+
+\subsection{DEM-Constrained Inundation Estimation}
+The most consequential current gap is that the flood workflow predicts a temporal risk label rather than a spatially explicit inundation field. A first extension should produce a terrain-constrained depth estimate from the Copernicus GLO-30 DEM, rainfall forcing, drainage proxies, and estimated boundary conditions. The model should begin with a computationally tractable diffusive-wave approximation rather than claim an unvalidated full hydrodynamic solver. One possible formulation is
+\begin{align}
+\frac{\partial h}{\partial t} &= R-I-\nabla\cdot\mathbf{q},\\
+\mathbf{q} &= -\frac{h^{5/3}}{n\sqrt{\|\nabla z\|+\epsilon}}\nabla(z+h),
+\label{eq:diffusive}
+\end{align}
+where $h$ is depth, $z$ is terrain elevation, $R$ is rainfall excess, $I$ represents infiltration or drainage loss, $n$ is a roughness parameter, and $\epsilon$ prevents division by zero over nearly flat terrain. The model requires explicit cell size, time step, stability conditions, drainage-boundary assumptions, and treatment of buildings and impermeable surfaces.
+
+The validation target should be observed flood extent, reported waterlogging points, road closures, satellite-derived flood masks, or surveyed water-depth observations. Appropriate metrics are intersection-over-union (IoU), critical success index, flooded-area error, depth RMSE where depth observations exist, and event-level warning lead time. Until these observations are available, the output must be labelled \emph{DEM-constrained scenario inundation}, not measured flood depth.
+
+\subsection{Impact Catalogue and Asset Exposure Layer}
+The second extension is a versioned impact catalogue. Each record should contain an event identifier, timestamp interval, location or asset identifier, impact category, source URL or archival reference, confidence, and a real/proxy/synthetic label. Priority impact categories are road closure, waterlogging location, reservoir overflow, hospital-access disruption, power interruption, and drainage-service failure. Such a catalogue connects the hazard model to a concrete endpoint and supports a defensible question: whether a warning predicts impact before it occurs.
+
+An asset exposure score can be formulated as
+\begin{equation}
+\mathcal{E}_a(t)=P_a(t)\times C_a\times V_a\times A_a,
+\label{eq:exposure}
+\end{equation}
+where $P_a(t)$ is the calibrated probability of impact at asset $a$, $C_a$ is service criticality, $V_a$ is vulnerability, and $A_a$ is an exposure or affected-population factor. Values for $C_a$, $V_a$, and $A_a$ must have documented sources or be clearly represented as scenario parameters. The result is a prioritization score, not a direct estimate of economic loss or casualties.
+
+\subsection{Counterfactual Historical Replay}
+Historical replay should be extended from a visual time-machine function to a controlled counterfactual experiment. The system should preserve the observed forcing trajectory, alter one intervention variable, and report the difference in model output with uncertainty. Examples include changing pump availability, a drainage blockage assumption, or reservoir release timing. For an intervention $u$ applied at time $t_0$, the counterfactual quantity of interest is
+\begin{equation}
+\Delta \mathcal{I}=\mathcal{I}(\mathbf{x}_{1:T},u_{\mathrm{observed}})-\mathcal{I}(\mathbf{x}_{1:T},u_{\mathrm{counterfactual}}),
+\label{eq:counterfactual}
+\end{equation}
+where $\mathcal{I}$ may be inundated area, number of impacted proxy assets, or risk-index duration. A valid interpretation requires a structural model for how $u$ affects the state. Without observed operations and a calibrated hydrodynamic model, the result should be called a \emph{scenario comparison}, not a causal estimate of avoided loss.
+
+\subsection{Constrained Intervention Recommender}
+After a validated state and impact model exists, an intervention recommender can be implemented using model predictive control (MPC). Let $S_t$ denote storage, $u_t$ a release or actuation decision, and $\widehat{\mathcal{I}}_t$ a forecast impact. A multi-objective planning objective is
+\begin{equation}
+\min_{u_{1:T}}\sum_{t=1}^{T}\left[w_I\widehat{\mathcal{I}}_t+w_S(S^\star-S_t)_+^2+w_\Delta(u_t-u_{t-1})^2\right].
+\label{eq:mpc2}
+\end{equation}
+The optimization must be subject to verified storage dynamics, release limits, downstream-channel limits, safety constraints, and rate limits. The Pareto frontier between flood-risk reduction and storage preservation should be shown instead of presenting one recommended action as universally optimal. This module is inappropriate for real sluice-gate control without formal collaboration and authorization from the responsible water authority.
+
+\subsection{Temporal Explainability and Alert Accountability}
+Feature-importance bars are insufficient for operational trust. For tree models, TreeSHAP can provide local contributions. For recurrent or graph-temporal models, integrated gradients, time-step ablation, or controlled counterfactual perturbation are more suitable than applying TreeSHAP outside its model family. For a prediction $f(\mathbf{x})$, a temporal perturbation attribution for feature $j$ at time $t$ can be summarized as
+\begin{equation}
+\phi_{j,t}=f(\mathbf{x})-f(\mathbf{x}_{\setminus(j,t)}),
+\label{eq:attribution}
+\end{equation}
+where $\mathbf{x}_{\setminus(j,t)}$ replaces the specified feature-time value with a documented baseline. Explanations must be evaluated for fidelity, stability under correlated inputs, consistency across nearby observations, and sensitivity to sensor faults. A correct interface should state which observation shifted an alert, the data source, its quality state, and the uncertainty interval.
+
+\subsection{Security, Governance, and Reproducibility}
+Operational digital twins need a threat model in addition to a forecast model. The message path should be tested under invalid signatures, replayed payloads, duplicate or out-of-order messages, stale timestamps, impossible values, and topic misuse. Detection rate, false-rejection rate, added latency, and time to safe recovery should be reported. The system should retain an immutable audit record of input provenance, model version, alert state, human acknowledgement, override, and post-event disposition.
+
+Reproducibility requires a data card, model card, split manifest, seeds, environment lockfile, experiment command, and result checksum for each table. A clean-machine rerun should be required before a manuscript claims a result is reproduced. These practices address a persistent gap in urban-twin studies, where highly integrated demonstrations are difficult to independently verify.
+
+\subsection{Equity, Accessibility, and Communication}
+An impact-based warning must also reach and be interpretable by affected communities. A future equity layer should not infer sensitive demographic attributes from unverified data. Instead, it should use authorized public vulnerability indicators and report coverage, warning latency, language availability, accessibility format, and service criticality across geographic areas. Equity evaluation should be stakeholder-governed and ethics-reviewed. It should be treated as a separate empirical study if appropriate data and approvals are not available.
+
+\begin{table*}[t]
+\caption{Feature roadmap for a stronger ClimateTwin research contribution. Proposed features are not presented as current experimental results.}
+\label{tab:roadmap}
+\centering\footnotesize
+\begin{tabular}{p{0.18\textwidth}p{0.24\textwidth}p{0.22\textwidth}p{0.26\textwidth}}
+\toprule
+Feature & Required input evidence & Required evaluation & Safe claim after implementation \\
+\midrule
+DEM-constrained inundation & DEM, rainfall forcing, drainage assumptions, observed extent/depth & IoU, flooded-area error, depth RMSE, event lead time & Physics-guided inundation estimate validated against the stated observations \\
+Impact catalogue & Verified event and impact records & Event precision/recall, impact Brier score, calibration & Impact-oriented warning for the stated label classes \\
+Counterfactual replay & Observed forcing, intervention record, structural model & Scenario sensitivity, uncertainty, constraint checks & Simulation-based historical intervention analysis \\
+MPC recommender & Verified operations, limits, storage dynamics & Pareto frontier, constraint violations, regret & Simulated constrained intervention recommender \\
+Temporal explainability & Stored inputs, baseline policy, model access & Fidelity, stability, perturbation tests & Auditable local explanation for the stated model \\
+Security and governance & Threat model, message logs, registry & Detection, false rejection, added latency & Prototype security and audit controls \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Implementation Roadmap}
+The implementation sequence matters. The first priority is not a larger neural network; it is evidence that connects a prediction to an observed impact. Phase~1 should create a clean impact catalogue and rerun all baseline experiments on fixed chronological splits. Phase~2 should add DEM-constrained inundation scenarios and validate them against any available flood-extent or road-impact source. Phase~3 should replace proxy topology with verified drainage and critical-asset dependencies where public data or municipal partnerships permit. Phase~4 should add calibrated intervention scenarios, not direct actuation. Phase~5 should conduct stakeholder and accessibility evaluation.
+
+Each phase should add a single reproducible result table, a data-provenance file, unit tests, and an explicit limitation statement. This staged approach converts the current broad prototype into a series of defensible research contributions. Table~\ref{tab:milestones} lists concrete deliverables.
+
+\begin{table}[t]
+\caption{Recommended implementation milestones.}
+\label{tab:milestones}
+\centering\footnotesize
+\begin{tabular}{p{0.13\columnwidth}p{0.78\columnwidth}}
+\toprule
+Phase & Deliverable and acceptance criterion \\
+\midrule
+1 & Versioned impact catalogue; all labels carry source, confidence, and real/proxy/synthetic status. \\
+2 & Fixed chronological benchmark with positive-event counts, confusion matrices, calibration, and independent rerun. \\
+3 & DEM-constrained inundation scenario model; validated against at least one observed spatial impact source. \\
+4 & Provenance-tracked graph; LSTM and GNN models trained on identical samples and compared fairly. \\
+5 & Scenario-based MPC or replay; constraints and uncertainty reported, no autonomous actuation claim. \\
+6 & Stakeholder-reviewed warning language, accessibility review, security harness, and prospective pilot design. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion}
+The main lesson from the current evidence is that a broad software architecture is not equivalent to a broad scientific contribution. ClimateTwin's most defensible contribution is a transparent, reproducible framework that reveals what changes when observations are stale, faulted, sparse, or outside the training distribution. The negative graph-model result and the sensitivity of state estimation to missing observations are not failures to hide; they identify the data and topology requirements for credible infrastructure-risk modeling.
+
+The project should focus its next empirical paper on one validated chain: observed rainfall and reservoir state, quality-aware assimilation, probabilistic flood warning, one real impact endpoint, and warning lead time. Road closure, waterlogging location, or a documented service-disruption record would be more valuable than adding multiple unvalidated hazard engines. Once this chain is validated, other hazards can be incorporated through a shared impact taxonomy.
+
+This approach also reduces the risk of overclaiming. Live weather APIs provide useful environmental observations but are not a replacement for physical municipal telemetry. OpenStreetMap roads and waterways are useful proxies but not verified active infrastructure dependencies. A synthetic Mumbai-like domain shift can evaluate adaptation behavior but is not real cross-city transfer. Simulated fault and decision studies are method tests, not deployment outcomes.
+
+\section{Limitations and Future Work}
+The following limitations are material.
+\begin{enumerate}
+\item Active infrastructure topology, including pumps and substations, is incomplete in the available public data.
+\item Infrastructure-failure, road-closure, and service-disruption labels are limited; many impact links are rules or proxies.
+\item The EnKF process model is persistence plus noise, not a calibrated hydrodynamic model.
+\item Current graph experiments do not demonstrate an advantage over the LSTM-only baseline.
+\item Fault injection, city transfer, human-factor, cascade, and decision-cost studies are simulated or proxy experiments where explicitly labelled.
+\item The independent holdout-event count is small and limits event-level uncertainty estimates.
+\item The system has not undergone a prospective municipal deployment or ethics-approved user study.
+\end{enumerate}
+
+Priority future work is: (i) build a real impact catalogue; (ii) acquire verified drainage, pump, substation, and service-dependency data; (iii) calibrate a physically constrained or hydraulic inundation component; (iv) validate uncertainty on independent extreme events; and (v) conduct a stakeholder-approved operational evaluation.
+
+\section{Conclusion}
+ClimateTwin is an uncertainty-aware prototype for multi-hazard urban risk monitoring in Chennai. It integrates real environmental and historical data with data-quality gates, assimilation, probabilistic forecasting, compound-risk reasoning, and decision-support interfaces. Its central contribution is an evidence-aware evaluation workflow that separates externally sourced observations from proxy topology and simulated experiments. Preliminary results support further study of temporal forecasting and calibrated warning under data-quality degradation, while the current graph, cascade, intervention, and human-factor evidence remains insufficient for operational claims. The path to a stronger journal contribution is clear: validate a real hazard-to-impact chain, use verified infrastructure dependencies, and report event-level uncertainty and decision value on independent data.
+
+\balance
+\begin{thebibliography}{99}
+\bibitem{macatulad2024} E. Macatulad and F. Biljecki, ``Continuing from the Sendai Framework midterm: Opportunities for urban digital twins in disaster risk management,'' \emph{International Journal of Disaster Risk Reduction}, vol. 102, Art. no. 104310, 2024.
+\bibitem{zhu2025} M. Zhu and J. Jin, ``Data-driven urban digital twins and critical infrastructure under climate change: A review of frameworks and applications,'' \emph{Urban Planning}, vol. 10, Art. no. 10109, 2025.
+\bibitem{omrany2025} H. Omrany, A. Mehdipour, D. Oteng, and K. M. Al-Obaidi, ``The uptake of urban digital twins in the built environment: A pathway to resilient and sustainable cities,'' \emph{Computational Urban Science}, vol. 5, Art. no. 20, 2025.
+\bibitem{ghaffarian2025} S. Ghaffarian, ``Rethinking digital twin: Introducing digital risk twin for disaster risk management,'' \emph{npj Natural Hazards}, vol. 2, Art. no. 79, 2025.
+\bibitem{undrr2024} UNDRR, \emph{Global Status of Multi-Hazard Early Warning Systems 2024}. Geneva, Switzerland: United Nations Office for Disaster Risk Reduction, 2024.
+\bibitem{wmo2024} WMO, \emph{Handbook on the Use of Risk Knowledge for Multi-Hazard Early Warning Systems}. Geneva, Switzerland: World Meteorological Organization, 2024.
+\bibitem{evensen2003} G. Evensen, ``The Ensemble Kalman Filter: Theoretical formulation and practical implementation,'' \emph{Ocean Dynamics}, vol. 53, no. 4, pp. 343--367, 2003.
+\bibitem{houtekamer2016} P. L. Houtekamer and F. Zhang, ``Review of the ensemble Kalman filter for atmospheric data assimilation,'' \emph{Monthly Weather Review}, vol. 144, no. 12, pp. 4489--4532, 2016.
+\bibitem{kipf2017} T. N. Kipf and M. Welling, ``Semi-supervised classification with graph convolutional networks,'' in \emph{Proc. ICLR}, 2017.
+\bibitem{seo2018} Y. Seo, M. Defferrard, P. Vandergheynst, and X. Bresson, ``Structured sequence modeling with graph convolutional recurrent networks,'' in \emph{Proc. ICONIP}, 2018.
+\bibitem{koenker1978} R. Koenker and G. Bassett, ``Regression quantiles,'' \emph{Econometrica}, vol. 46, no. 1, pp. 33--50, 1978.
+\bibitem{vovk2022} V. Vovk, A. Gammerman, and G. Shafer, \emph{Algorithmic Learning in a Random World}, 2nd ed. Cham, Switzerland: Springer, 2022.
+\bibitem{zscheischler2020} J. Zscheischler \emph{et al.}, ``A typology of compound weather and climate events,'' \emph{Nature Reviews Earth \& Environment}, vol. 1, pp. 333--347, 2020.
+\bibitem{hydrograph2025} H. Wu \emph{et al.}, ``Interpretable physics-informed graph neural networks for flood forecasting,'' \emph{Advances in Water Resources}, 2025.
+\end{thebibliography}
+\end{document}

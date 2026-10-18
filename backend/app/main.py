@@ -73,6 +73,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
+    # Vite may choose a different local development port when another
+    # dashboard session is already running.  Keep this convenience strictly
+    # local and debug-only; deployed origins must be configured explicitly.
+    allow_origin_regex=(r"^https?://(localhost|127\.0\.0\.1):\d+$" if settings.DEBUG else None),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

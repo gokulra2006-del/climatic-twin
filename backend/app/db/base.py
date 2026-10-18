@@ -7,4 +7,5 @@ from app.models.hazard import HazardType, HazardEvent, HistoricalEvent, HazardPr
 from app.models.risk import DigitalTwinState, RiskAssessment, WarningLevel, Alert
 from app.models.model import PredictionModel, ModelPrediction, ModelEvaluation
 from app.models.log import SystemLog
+from app.models.impact_record import ImpactRecord
 

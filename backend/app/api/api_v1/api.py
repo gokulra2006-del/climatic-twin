@@ -25,7 +25,11 @@ from app.api.api_v1.endpoints import (
     explainability,
     ai,
     model_monitoring,
-    cascade
+    cascade,
+    impact_catalogue,
+    research_readiness,
+    synthetic_benchmark,
+    research_operations,
 )
 
 api_router = APIRouter()
@@ -54,3 +58,7 @@ api_router.include_router(assistant.router, prefix="/assistant", tags=["AI Assis
 api_router.include_router(explainability.router, prefix="/explainability", tags=["Explainable AI"])
 api_router.include_router(ai.router, prefix="/ai", tags=["AI Intelligence"])
 api_router.include_router(model_monitoring.router, prefix="/model-health", tags=["Model Drift & Monitoring"])
+api_router.include_router(impact_catalogue.router, prefix="/impacts", tags=["Historical Impact Catalogue"])
+api_router.include_router(research_readiness.router, prefix="/research-readiness", tags=["Research Evidence Readiness"])
+api_router.include_router(synthetic_benchmark.router, prefix="/synthetic-benchmark", tags=["Synthetic Benchmark"])
+api_router.include_router(research_operations.router, prefix="/research-operations", tags=["Research Operations"])

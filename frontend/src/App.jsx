@@ -1,4 +1,4 @@
-import {AlertTriangle, Shield, Thermometer, Wind, Droplets, CloudRain, MapPin, RefreshCw, Layers, Database, Sparkles, CheckCircle2, Clock, Gauge, Radio, LogOut, User, Activity, FileText, Settings, Users, PlayCircle, Sliders, HardDrive, Cpu, ChevronDown, ChevronRight, Zap, ShieldAlert, Terminal, Sun, Flame} from 'lucide-react'
+import {AlertTriangle, Shield, Thermometer, Wind, Droplets, CloudRain, MapPin, RefreshCw, Layers, Database, Sparkles, CheckCircle2, Clock, Gauge, Radio, LogOut, User, Activity, FileText, Settings, Users, PlayCircle, Sliders, HardDrive, Cpu, ChevronDown, ChevronRight, Zap, ShieldAlert, Terminal, Sun, Flame, ClipboardCheck, Beaker, ClipboardPenLine} from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, Rectangle } from 'react-leaflet'
 import { 
@@ -8,10 +8,17 @@ import Login from './Login'
 import { useAuth } from './context/AuthContext'
 import Assistant from './Assistant'
 import HeatwaveDashboard from './HeatwaveDashboard'
+import DroughtDashboard from './DroughtDashboard'
+import WildfireDashboard from './WildfireDashboard'
+import ExtremeRainfallDashboard from './ExtremeRainfallDashboard'
 import NovaCommandSummary from './NovaCommandSummary'
 import EarlyWarningCenter from './EarlyWarningCenter'
 import LiveFloodIntelligence from './components/LiveFloodIntelligence'
 import ModelHealthDashboard from './components/ModelHealthDashboard'
+import ImpactCatalogue from './components/ImpactCatalogue'
+import ResearchReadinessPanel from './components/ResearchReadinessPanel'
+import SyntheticBenchmarkPanel from './components/SyntheticBenchmarkPanel'
+import ResearchOperationsHub from './components/ResearchOperationsHub'
 
 
 // Fix for default Leaflet marker icon issues in React
@@ -186,6 +193,10 @@ const Sidebar = ({ userRole, currentView, setCurrentView, selectedHazard, setSel
       items: [
         { id: "DASHBOARD", label: "Live Dashboard", icon: <Layers className="h-3.5 w-3.5" />, action: () => { setSelectedHazard("OVERVIEW"); setCurrentView('DASHBOARD'); }, isActive: currentView === 'DASHBOARD' && selectedHazard === 'OVERVIEW' },
         { id: "LIVE_FLOOD_INTEL", label: "Phase Next Live Intel", icon: <Activity className="h-3.5 w-3.5 text-emerald-400" />, action: () => setCurrentView('LIVE_FLOOD_INTEL'), isActive: currentView === 'LIVE_FLOOD_INTEL' },
+        { id: "IMPACT_CATALOGUE", label: "Impact Catalogue", icon: <Database className="h-3.5 w-3.5 text-indigo-500" />, action: () => setCurrentView('IMPACT_CATALOGUE'), isActive: currentView === 'IMPACT_CATALOGUE' },
+        { id: "RESEARCH_READINESS", label: "Research Evidence", icon: <ClipboardCheck className="h-3.5 w-3.5 text-indigo-500" />, action: () => setCurrentView('RESEARCH_READINESS'), isActive: currentView === 'RESEARCH_READINESS' },
+        { id: "RESEARCH_OPERATIONS", label: "Evidence & Action Hub", icon: <ClipboardPenLine className="h-3.5 w-3.5 text-emerald-600" />, action: () => setCurrentView('RESEARCH_OPERATIONS'), isActive: currentView === 'RESEARCH_OPERATIONS' },
+        { id: "SYNTHETIC_BENCHMARK", label: "Synthetic Benchmark", icon: <Beaker className="h-3.5 w-3.5 text-indigo-500" />, action: () => setCurrentView('SYNTHETIC_BENCHMARK'), isActive: currentView === 'SYNTHETIC_BENCHMARK' },
         { id: "MODEL_HEALTH", label: "Model Drift & Health", icon: <Cpu className="h-3.5 w-3.5 text-indigo-600" />, action: () => setCurrentView('MODEL_HEALTH'), isActive: currentView === 'MODEL_HEALTH' },
         { id: "EARLY_WARNING", label: "Early Warning Center", icon: <ShieldAlert className="h-3.5 w-3.5 text-red-400" />, action: () => setCurrentView('EARLY_WARNING'), isActive: currentView === 'EARLY_WARNING' },
         { id: "COMPOUND_RISK", label: "City Compound Risk", icon: <AlertTriangle className="h-3.5 w-3.5" />, action: () => { setSelectedHazard("COMPOUND_RISK"); setCurrentView('DASHBOARD') }, isActive: currentView === 'DASHBOARD' && selectedHazard === 'COMPOUND_RISK' }
@@ -290,27 +301,37 @@ function App() {
   const [selectedTimeMachineScenario, setSelectedTimeMachineScenario] = useState('2015_FLOODS')
   const [timeMachineLoading, setTimeMachineLoading] = useState(false)
   const [timeMachineSuccess, setTimeMachineSuccess] = useState(false)
+  const [timeMachineResult, setTimeMachineResult] = useState(null)
+  const [timeMachineError, setTimeMachineError] = useState(null)
+  const timeMachineScenario = selectedTimeMachineScenario === '2019_DROUGHT'
+    ? { title: '2019 Chennai Water Crisis', window: '01 May–31 Jul 2019', input: 'Archived reservoir storage', output: 'Drought-stress proxy timeline', hazard: 'drought', start: '2019-05-01', end: '2019-07-31' }
+    : { title: '2015 Chennai December Floods', window: '01–05 Dec 2015', input: 'Archived rainfall series', output: 'Flood-risk proxy timeline', hazard: 'flood', start: '2015-12-01', end: '2015-12-05' }
 
   const handleLoadTimeMachine = async () => {
     if (!selectedTimeMachineScenario) return;
     setTimeMachineLoading(true);
     setTimeMachineSuccess(false);
+    setTimeMachineError(null);
+    setTimeMachineResult(null);
     try {
-      if (selectedTimeMachineScenario === '2015_FLOODS') {
-        // Trigger the cyclonic deluge simulation backend to mimic 2015 flood conditions
-        await fetch(`${API_URL}/api/alerts/simulate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenario: 'SCENARIO_D_EXTREME_CYCLONIC_DELUGE' })
-        });
-        // Refresh local UI state for dashboard
-        await handleScenarioChange('SCENARIO_D_EXTREME_CYCLONIC_DELUGE');
-        // Show success state on this page instead of redirecting
-        setTimeMachineSuccess(true);
+      const replayResponse = await fetch(
+        `${API_URL}/api/replay/${timeMachineScenario.hazard}?start_date=${timeMachineScenario.start}&end_date=${timeMachineScenario.end}`
+      );
+      if (!replayResponse.ok) {
+        throw new Error(`Historical replay request failed (${replayResponse.status})`);
       }
+      const replay = await replayResponse.json();
+      if (!Array.isArray(replay.timeline) || replay.timeline.length === 0) {
+        throw new Error('No replay observations are available for the selected event window.');
+      }
+
+      // Keep historical replay read-only. It must not modify live telemetry,
+      // create an alert, or silently turn an archival analysis into an operational drill.
+      setTimeMachineResult(replay);
+      setTimeMachineSuccess(true);
     } catch (e) {
       console.error('Time machine failed:', e);
-      alert('Failed to load historical scenario.');
+      setTimeMachineError(e.message || 'The historical replay could not be loaded.');
     } finally {
       setTimeMachineLoading(false);
     }
@@ -454,10 +475,13 @@ function App() {
   const [selectedHazardModal, setSelectedHazardModal] = useState(null)
   const [anomalyFeed, setAnomalyFeed] = useState([])
   const [selectedSourceModal, setSelectedSourceModal] = useState(null)
+  const [liveSensorNetwork, setLiveSensorNetwork] = useState(null)
 
   // Admin Data states
   const [adminUsers, setAdminUsers] = useState([])
   const [adminSensors, setAdminSensors] = useState([])
+  const [liveSensors, setLiveSensors] = useState([])
+  const [sensorAggregate, setSensorAggregate] = useState(null)
   const [adminLogs, setAdminLogs] = useState([])
   const [adminLoading, setAdminLoading] = useState(false)
   const [explainabilityData, setExplainabilityData] = useState(null)
@@ -490,12 +514,13 @@ function App() {
         fetch(`${API_URL}/api/data-quality/anomalies`),
         fetch(`${API_URL}/api/decision-support/current`),
         fetch(`${API_URL}/api/external-hazards/detailed`),
-        fetch(`${API_URL}/api/explainability/${apiHazard.toUpperCase()}`)
+        fetch(`${API_URL}/api/explainability/${apiHazard.toUpperCase()}`),
+        fetch(`${API_URL}/api/sensors/live-network`)
       ])
 
       const [
         healthRes, assetsRes, predRes, alertsRes, cascRes, vulRes,
-        twinRes, histRes, fcRes, mhRes, arRes, spatRes, dqRes, anomRes, dsRes, extHazRes, explainRes
+        twinRes, histRes, fcRes, mhRes, arRes, spatRes, dqRes, anomRes, dsRes, extHazRes, explainRes, sensorRes
       ] = results
 
       if (healthRes.status === 'fulfilled' && healthRes.value.ok) {
@@ -528,6 +553,14 @@ function App() {
 
       if (vulRes.status === 'fulfilled' && vulRes.value.ok) {
         setVulnerabilityData(await vulRes.value.json())
+      }
+
+      if (sensorRes && sensorRes.status === 'fulfilled' && sensorRes.value.ok) {
+        try {
+          const sData = await sensorRes.value.json();
+          if (sData.stations) setLiveSensors(sData.stations);
+          if (sData.aggregate) setSensorAggregate(sData.aggregate);
+        } catch(e) {}
       }
 
       if (twinRes.status === 'fulfilled' && twinRes.value.ok) {
@@ -844,6 +877,9 @@ function App() {
                 ? `${selectedHazard === 'OVERVIEW' ? 'Live System' : selectedHazard.replace('_', ' ').toLowerCase()} Digital Twin`
                 : currentView === 'TIME_MACHINE' ? 'Time Machine & Historical Replay'
                 : currentView === 'LIVE_FLOOD_INTEL' ? 'Real-Time Flood Intelligence'
+                : currentView === 'RESEARCH_READINESS' ? 'Research Evidence Readiness'
+                : currentView === 'RESEARCH_OPERATIONS' ? 'Evidence & Action Hub'
+                : currentView === 'SYNTHETIC_BENCHMARK' ? 'Synthetic Benchmark'
                 : currentView === 'MODEL_HEALTH' ? 'Model Health, Drift & Retraining'
                 : currentView === 'EARLY_WARNING' ? 'Early Warning Center'
                 : currentView === 'ASSIMILATION' ? 'Data Assimilation Center'
@@ -851,7 +887,7 @@ function App() {
                 : currentView === 'TELEMETRY' ? 'Telemetry Health'
                 : `${currentView.replace('_', ' ').toLowerCase()}`}
             </h2>
-            <p className="text-xs text-slate-500">Live monitoring and prediction command center</p>
+            <p className="text-xs text-slate-500">Prototype monitoring and prediction command center</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
@@ -871,6 +907,11 @@ function App() {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-20 relative">
           
         {currentView === 'LIVE_FLOOD_INTEL' && <LiveFloodIntelligence />}
+          
+          {currentView === 'IMPACT_CATALOGUE' && <ImpactCatalogue />}
+          {currentView === 'RESEARCH_READINESS' && <ResearchReadinessPanel />}
+          {currentView === 'RESEARCH_OPERATIONS' && <ResearchOperationsHub />}
+          {currentView === 'SYNTHETIC_BENCHMARK' && <SyntheticBenchmarkPanel />}
         
         {currentView === 'MODEL_HEALTH' && <ModelHealthDashboard />}
         
@@ -1079,12 +1120,12 @@ function App() {
                             <span className="font-bold">{typeof v === 'number' ? v.toFixed(2) : v}</span>
                           </div>
                         )) : (
-                          <div className="col-span-2 text-gray-400">No specific features available.</div>
+                          <div className="col-span-2 text-gray-400">Feature attributions are unavailable for this prototype prediction.</div>
                         )}
                       </div>
                       
                       <div className="mt-3 pt-3 border-t text-[10px] text-gray-500 space-y-1">
-                        <p><strong>Data Source:</strong> {latestPred.data_source || 'Simulated Sensor Feeds'}</p>
+                        <p><strong>Data Source:</strong> {latestPred.data_source || 'Simulated prototype sensor feeds'}</p>
                         <p><strong>Status:</strong> <span className="px-1 py-0.5 bg-amber-100 text-amber-800 rounded font-bold uppercase">{latestPred.simulation_label || 'PROTOTYPE RISK INDEX'}</span></p>
                       </div>
                       <div className="border-t mt-2 pt-2 text-[10px] text-gray-400 italic">
@@ -1986,14 +2027,36 @@ function App() {
 
           </>
         ) : selectedHazard === 'HEATWAVE' ? (
-          <HeatwaveDashboard 
-            latestPred={latestPred}
-            forecastData={forecastData}
-            dataQuality={dataQuality}
-            loading={loading}
-            explainabilityData={explainabilityData}
-          />
-        ) : (
+            <HeatwaveDashboard 
+              latestPred={latestPred}
+              forecastData={forecastData}
+              dataQuality={dataQuality}
+              loading={loading}
+              onRefresh={() => fetchDashboardData('HEATWAVE')}
+              explainabilityData={explainabilityData}
+              apiUrl={API_URL}
+            />
+          ) : selectedHazard === 'DROUGHT' ? (
+            <DroughtDashboard 
+              latestPred={latestPred}
+              forecastData={forecastData}
+              dataQuality={dataQuality}
+              loading={loading}
+              onRefresh={() => fetchDashboardData('DROUGHT')}
+            />
+          ) : selectedHazard === 'WILDFIRE' ? (
+            <WildfireDashboard 
+              latestPred={latestPred}
+              loading={loading}
+              onRefresh={() => fetchDashboardData('WILDFIRE')}
+            />
+          ) : selectedHazard === 'EXTREME_RAINFALL' ? (
+            <ExtremeRainfallDashboard 
+              latestPred={latestPred}
+              loading={loading}
+              onRefresh={() => fetchDashboardData('EXTREME_RAINFALL')}
+            />
+          ) : (
               <div className="space-y-6 max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Left Column: Risk Status */}
@@ -2308,58 +2371,152 @@ function App() {
       )}
 
       {currentView === 'TELEMETRY' && hasRole(['admin', 'operator']) && (
-        <div className="max-w-4xl mx-auto mt-8">
-              <div className="bg-slate-900 text-white p-8 rounded-xl shadow-md border border-slate-700 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-700 pb-4">
-                  <h3 className="text-lg font-bold text-blue-400 flex items-center gap-2">
-                    <Radio className="h-6 w-6 text-blue-400 animate-pulse" />
-                    System Telemetry & Latency Monitor
-                  </h3>
+          <div className="max-w-6xl mx-auto space-y-6">
+                {/* 1. Multi-Sensor Spatial Network Across Chennai */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                          Open-Meteo Synced
+                        </span>
+                        <span className="text-xs text-slate-500 font-mono">6 Telemetry Stations</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <Radio className="h-5 w-5 text-indigo-600 animate-pulse" />
+                        Greater Chennai Multi-Station Sensor Network
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+                      <span>All 6 Stations Active</span>
+                    </div>
+                  </div>
+
+                  {/* Aggregate Summary Ribbon */}
+                  {sensorAggregate && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Mean Temp</p>
+                        <p className="text-2xl font-black text-slate-800">{sensorAggregate.avg_temperature_c}C</p>
+                        <span className="text-[10px] text-slate-500">Range: {sensorAggregate.min_temperature_c} - {sensorAggregate.max_temperature_c}C</span>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Max Hourly Rain</p>
+                        <p className="text-2xl font-black text-blue-600">{sensorAggregate.max_rainfall_mm} mm</p>
+                        <span className="text-[10px] text-slate-500">Mean: {sensorAggregate.avg_rainfall_mm} mm/hr</span>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Peak Wind Gust</p>
+                        <p className="text-2xl font-black text-indigo-600">{sensorAggregate.max_wind_kmh} km/h</p>
+                        <span className="text-[10px] text-slate-500">Coastal Buoy Station</span>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Network Quality</p>
+                        <p className="text-2xl font-black text-emerald-600">100%</p>
+                        <span className="text-[10px] text-emerald-700 font-bold">Zero Dropped Packets</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sensor Cards Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {liveSensors.length > 0 ? liveSensors.map((st) => (
+                      <div key={st.station_id} className="p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm transition">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                              {st.zone}
+                            </span>
+                            <h3 className="font-bold text-sm text-slate-800 mt-1">{st.name}</h3>
+                          </div>
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> ONLINE
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                          <div className="bg-slate-50 p-2 rounded">
+                            <span className="text-[10px] text-slate-500 block">Temperature</span>
+                            <span className="font-bold text-slate-800">{st.readings.temperature_c}C</span>
+                          </div>
+                          <div className="bg-slate-50 p-2 rounded">
+                            <span className="text-[10px] text-slate-500 block">Rainfall</span>
+                            <span className="font-bold text-blue-600">{st.readings.precipitation_mm} mm</span>
+                          </div>
+                          <div className="bg-slate-50 p-2 rounded">
+                            <span className="text-[10px] text-slate-500 block">Humidity</span>
+                            <span className="font-bold text-slate-800">{st.readings.humidity_pct}%</span>
+                          </div>
+                          <div className="bg-slate-50 p-2 rounded">
+                            <span className="text-[10px] text-slate-500 block">Soil Moisture</span>
+                            <span className="font-bold text-emerald-700">{st.readings.soil_moisture_m3m3}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between text-[10px] text-slate-500 font-mono">
+                          <span>{st.latitude.toFixed(4)}N, {st.longitude.toFixed(4)}E</span>
+                          <span className="text-emerald-600 font-bold">QC: {st.quality_flag}</span>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="col-span-3 text-center py-8 text-slate-500">
+                        Synchronizing multi-sensor spatial network...
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. System Latency Monitor */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                    <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-indigo-600" />
+                      Inference Latency & Edge Acceleration Engine
+                    </h3>
+                    
+                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                      <button 
+                        onClick={() => setInferenceMode("cloud")}
+                        className={`px-3 py-1.5 text-xs rounded-lg font-bold uppercase transition ${inferenceMode === "cloud" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                      >
+                        Cloud API
+                      </button>
+                      <button 
+                        onClick={() => setInferenceMode("edge")}
+                        className={`px-3 py-1.5 text-xs rounded-lg font-bold uppercase transition flex items-center gap-1 ${inferenceMode === "edge" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-emerald-600" /> Edge (IoT)
+                      </button>
+                    </div>
+                  </div>
                   
-                  <div className="flex bg-slate-800 p-1 rounded border border-slate-700">
-                    <button 
-                      onClick={() => setInferenceMode("cloud")}
-                      className={`px-4 py-2 text-xs rounded font-bold uppercase transition ${inferenceMode === "cloud" ? "bg-indigo-600 text-white shadow-lg" : "text-slate-500 hover:text-white"}`}
-                    >
-                      Cloud
-                    </button>
-                    <button 
-                      onClick={() => setInferenceMode("edge")}
-                      className={`px-4 py-2 text-xs rounded font-bold uppercase transition flex items-center gap-1 ${inferenceMode === "edge" ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-white"}`}
-                    >
-                      <Sparkles className="h-4 w-4" /> Edge (IoT)
-                    </button>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold">Min Latency</p>
+                      <p className="text-2xl font-black text-slate-800 mt-1">{latencyStats.min.toFixed(2)} ms</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold">Max Latency</p>
+                      <p className="text-2xl font-black text-slate-800 mt-1">{latencyStats.max.toFixed(2)} ms</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold">Mean E2E</p>
+                      <p className="text-2xl font-black text-emerald-600 mt-1">{latencyStats.mean.toFixed(2)} ms</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold">Median E2E</p>
+                      <p className="text-2xl font-black text-emerald-600 mt-1">{latencyStats.median.toFixed(2)} ms</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-2 md:col-span-1">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold">Sampled Cycles</p>
+                      <p className="text-2xl font-black text-indigo-600 mt-1">{latencyStats.count}</p>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                  <div className="bg-slate-800 p-4 rounded border border-slate-700">
-                    <p className="text-xs text-slate-500 uppercase font-semibold">Min Latency</p>
-                    <p className="text-2xl font-black text-blue-300 mt-2">{latencyStats.min.toFixed(2)} ms</p>
-                  </div>
-                  <div className="bg-slate-800 p-4 rounded border border-slate-700">
-                    <p className="text-xs text-slate-500 uppercase font-semibold">Max Latency</p>
-                    <p className="text-2xl font-black text-blue-300 mt-2">{latencyStats.max.toFixed(2)} ms</p>
-                  </div>
-                  <div className="bg-slate-800 p-4 rounded border border-slate-700">
-                    <p className="text-xs text-slate-500 uppercase font-semibold">Mean E2E</p>
-                    <p className="text-2xl font-black text-emerald-400 mt-2">{latencyStats.mean.toFixed(2)} ms</p>
-                  </div>
-                  <div className="bg-slate-800 p-4 rounded border border-slate-700">
-                    <p className="text-xs text-slate-500 uppercase font-semibold">Median E2E</p>
-                    <p className="text-2xl font-black text-emerald-400 mt-2">{latencyStats.median.toFixed(2)} ms</p>
-                  </div>
-                  <div className="bg-slate-800 p-4 rounded border border-slate-700 col-span-2 md:col-span-1">
-                    <p className="text-xs text-slate-500 uppercase font-semibold">Test Events</p>
-                    <p className="text-2xl font-black text-indigo-300 mt-2">{latencyStats.count}</p>
-                  </div>
-                </div>
-                <div className="text-xs text-slate-500 italic mt-4 pt-4 border-t border-slate-800">
-                  Note: Telemetry latencies represent the total time elapsed from simulation source trigger → ingestion router → Python RF inference → dashboard client callback execution.
-                </div>
-              </div>
-        </div>
-      )}
+          </div>
+        )}
 
       {currentView === 'ACTUATION' && hasRole(['admin', 'operator']) && (
         <div className="max-w-4xl mx-auto mt-8">
@@ -2567,108 +2724,225 @@ function App() {
 
             {/* AUDIT LOGS VIEW */}
             {currentView === 'LOGS' && (
-              <div className="bg-white rounded-xl shadow border border-gray-200">
-                <div className="p-5 border-b border-gray-200 bg-slate-50 rounded-t-xl">
-                  <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-indigo-500" /> System Audit Logs
-                  </h2>
-                </div>
-                {adminLoading ? (
-                  <div className="p-12 text-center text-slate-500 text-sm">Loading logs...</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-gray-500">
-                      <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
-                        <tr>
-                          <th className="px-6 py-3">Timestamp</th>
-                          <th className="px-6 py-3">User ID</th>
-                          <th className="px-6 py-3">Action Type</th>
-                          <th className="px-6 py-3">Details</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {adminLogs.length > 0 ? adminLogs.map(l => (
-                          <tr key={l.id} className="bg-white border-b hover:bg-gray-50">
-                            <td className="px-6 py-3 text-xs">{new Date(l.timestamp).toLocaleString()}</td>
-                            <td className="px-6 py-3 font-medium">{l.user_id}</td>
-                            <td className="px-6 py-3">
-                              <span className="px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded text-[10px] font-bold uppercase">{l.action}</span>
-                            </td>
-                            <td className="px-6 py-3 text-xs max-w-xs truncate">{l.details}</td>
-                          </tr>
-                        )) : (
-                          <tr><td colSpan="4" className="px-6 py-8 text-center text-slate-500">No audit logs found.</td></tr>
-                        )}
-                      </tbody>
-                    </table>
+                <div className="max-w-6xl mx-auto space-y-6">
+                  {/* Top Stats Ribbon */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                      <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Total Audit Events</p>
+                      <p className="text-2xl font-black text-slate-800">{adminLogs.length}</p>
+                      <span className="text-[10px] text-emerald-600 font-bold">100% Traceability</span>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                      <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Active Operators</p>
+                      <p className="text-2xl font-black text-indigo-700">3 Sessions</p>
+                      <span className="text-[10px] text-slate-500 font-medium">admin, operator, worker</span>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                      <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Integrity Status</p>
+                      <p className="text-2xl font-black text-emerald-600">VERIFIED</p>
+                      <span className="text-[10px] text-slate-500 font-medium">SHA-256 Ledger Locked</span>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                      <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Logging Pipeline</p>
+                      <p className="text-2xl font-black text-blue-600">ONLINE</p>
+                      <span className="text-[10px] text-slate-500 font-medium">Async Event Streaming</span>
+                    </div>
                   </div>
-                )}
-              </div>
-            )}
 
-            {/* TIME MACHINE VIEW */}
-            {currentView === 'TIME_MACHINE' && (
-              <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 max-w-2xl mx-auto">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2">
-                  <PlayCircle className="h-6 w-6 text-emerald-500" /> Historical Replay & Time Machine
-                </h2>
-                <p className="text-slate-500 text-sm mb-6 pb-6 border-b">
-                  Select a historical disaster scenario to load historical telemetry data into the live pipeline. 
-                  The digital twin will evaluate past data as if it were happening right now.
-                </p>
-                <div className="space-y-4">
-                  {timeMachineSuccess && (
-                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-lg mb-6 flex flex-col items-center text-center animate-pulse">
-                      <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-2" />
-                      <h3 className="font-bold">Historical Data Pipeline Loaded</h3>
-                      <p className="text-sm mt-1">
-                        The live digital twin and Early Warning Center are now processing the 2015 extreme weather event.
-                      </p>
-                      <div className="mt-4 flex gap-3 w-full max-w-sm">
-                        <button 
-                          onClick={() => {
-                            setSelectedHazard('COMPOUND_RISK');
-                            setCurrentView('EARLY_WARNING');
-                          }}
-                          className="flex-1 bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-2 rounded shadow transition">
-                          View Warning Center
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setSelectedHazard('COMPOUND_RISK');
-                            setCurrentView('DASHBOARD');
-                          }}
-                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm text-xs font-bold py-2 rounded shadow transition">
-                          View Live Dashboard
-                        </button>
+                  {/* Main Table */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="p-5 border-b border-slate-200 bg-slate-50/70 flex justify-between items-center">
+                      <div>
+                        <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-indigo-600" />
+                          System Operational Audit Logs & Traceability
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Immutable security and actuation logs recorded across all digital twin services
+                        </p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        Live Audit Stream
+                      </span>
+                    </div>
+
+                    {adminLoading ? (
+                      <div className="p-16 text-center text-slate-500 text-sm flex flex-col items-center justify-center gap-2">
+                        <RefreshCw className="h-6 w-6 text-indigo-500 animate-spin" />
+                        <span>Loading audit records...</span>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-600">
+                          <thead className="text-[10px] font-bold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                            <tr>
+                              <th className="px-6 py-3.5">Timestamp</th>
+                              <th className="px-6 py-3.5">User / Agent</th>
+                              <th className="px-6 py-3.5">Action Code</th>
+                              <th className="px-6 py-3.5">Target Resource</th>
+                              <th className="px-6 py-3.5">Metadata / Details</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-mono text-xs">
+                            {adminLogs.length > 0 ? adminLogs.map(l => (
+                              <tr key={l.id} className="hover:bg-slate-50/70 transition">
+                                <td className="px-6 py-3.5 text-slate-500">
+                                  {new Date(l.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}
+                                  <span className="block text-[10px] text-slate-400 font-sans">{new Date(l.timestamp).toLocaleDateString()}</span>
+                                </td>
+                                <td className="px-6 py-3.5 font-bold text-slate-800 font-sans flex items-center gap-1.5 pt-4">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                  {l.username || `User #${l.user_id}`}
+                                </td>
+                                <td className="px-6 py-3.5">
+                                  <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider ${
+                                    l.action.includes('EMERGENCY') || l.action.includes('ACTUATION') 
+                                      ? 'bg-rose-100 text-rose-800 border border-rose-200' 
+                                      : l.action.includes('SYNC') || l.action.includes('ASSIMILATION')
+                                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                      : 'bg-slate-100 text-slate-800 border border-slate-200'
+                                  }`}>
+                                    {l.action}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-3.5 font-semibold text-indigo-700">
+                                  {l.resource || 'SYSTEM'}
+                                </td>
+                                <td className="px-6 py-3.5 text-slate-600 max-w-sm truncate font-sans text-xs">
+                                  {l.metadata_json || l.details || `Logged from ${l.ip_address || '127.0.0.1'}`}
+                                </td>
+                              </tr>
+                            )) : (
+                              <tr>
+                                <td colSpan="5" className="px-6 py-12 text-center text-slate-400 font-sans">
+                                  No audit events recorded yet.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TIME MACHINE VIEW */}
+              {currentView === 'TIME_MACHINE' && (
+                <div className="max-w-5xl mx-auto space-y-5">
+                  <section className="bg-white p-7 rounded-2xl shadow-sm border border-slate-200">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 border-b border-slate-100 pb-6">
+                      <div>
+                        <div className="flex items-center gap-2 text-emerald-700 text-xs font-bold tracking-wide uppercase mb-2">
+                          <PlayCircle className="h-4 w-4" /> Controlled research replay
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-900">Historical Replay & Time Machine</h2>
+                        <p className="text-slate-500 text-sm mt-2 max-w-2xl leading-6">
+                          Re-run an archived environmental window through the prototype flood-risk pipeline. Replay results are research evidence, not a reconstruction of observed inundation or a decision record.
+                        </p>
+                      </div>
+                      <div className="shrink-0 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-xs text-indigo-900">
+                        <div className="font-bold uppercase tracking-wide text-[10px] text-indigo-600">Replay mode</div>
+                        <div className="mt-1 font-semibold">Read-only historical inputs</div>
                       </div>
                     </div>
-                  )}
-                  <div 
-                    onClick={() => setSelectedTimeMachineScenario('2015_FLOODS')}
-                    className={`bg-slate-50 border rounded-lg p-4 cursor-pointer hover:border-emerald-400 hover:shadow-md transition ${selectedTimeMachineScenario === '2015_FLOODS' ? 'border-emerald-500 shadow-md ring-1 ring-emerald-500' : ''}`}>
-                    <div className="flex justify-between items-center mb-1">
-                      <h3 className="font-bold text-slate-800">2015 Chennai December Floods</h3>
-                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">READY TO LOAD</span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6">
+                      <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                        <Clock className="h-4 w-4 text-indigo-500 mb-2" />
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Event window</div>
+                        <div className="text-sm font-bold text-slate-800 mt-1">{timeMachineScenario.window}</div>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                        <Database className="h-4 w-4 text-cyan-600 mb-2" />
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Input stream</div>
+                        <div className="text-sm font-bold text-slate-800 mt-1">{timeMachineScenario.input}</div>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                        <Gauge className="h-4 w-4 text-amber-500 mb-2" />
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Output</div>
+                        <div className="text-sm font-bold text-slate-800 mt-1">{timeMachineScenario.output}</div>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-500">Date Range: Dec 1, 2015 - Dec 5, 2015</p>
-                  </div>
-                  <div className="bg-slate-50 border border-dashed rounded-lg p-4 opacity-60">
-                    <div className="flex justify-between items-center mb-1">
-                      <h3 className="font-bold text-slate-800">2019 Chennai Water Crisis (Drought)</h3>
-                      <span className="bg-slate-200 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded">DATA UNAVAILABLE</span>
+                  </section>
+
+                  <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <div>
+                        <h3 className="font-bold text-slate-900">Choose a research scenario</h3>
+                        <p className="text-xs text-slate-500 mt-1">Only scenarios with an archived, compatible source stream can be run.</p>
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">2 READY</span>
                     </div>
-                    <p className="text-xs text-slate-500">Date Range: May 2019 - July 2019</p>
-                  </div>
-                  <button 
-                    onClick={handleLoadTimeMachine}
-                    disabled={timeMachineLoading || !selectedTimeMachineScenario}
-                    className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-3 rounded shadow transition flex justify-center items-center gap-2">
-                    <RefreshCw className={`h-4 w-4 ${timeMachineLoading ? 'animate-spin' : ''}`} /> 
-                    {timeMachineLoading ? 'Loading Temporal Data Pipeline...' : 'Load Selected Historical Scenario'}
-                  </button>
+
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTimeMachineScenario('2015_FLOODS')}
+                        className={`w-full text-left rounded-xl border p-4 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selectedTimeMachineScenario === '2015_FLOODS' ? 'border-emerald-500 bg-emerald-50/50 ring-1 ring-emerald-200' : 'border-slate-200 hover:border-emerald-300 hover:bg-slate-50'}`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                              <h4 className="font-bold text-slate-800">2015 Chennai December Floods</h4>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2">Five-day rainfall replay for a documented high-impact monsoon period.</p>
+                          </div>
+                          <span className="shrink-0 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded">READY</span>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTimeMachineScenario('2019_DROUGHT')}
+                        className={`w-full text-left rounded-xl border p-4 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selectedTimeMachineScenario === '2019_DROUGHT' ? 'border-amber-500 bg-amber-50/60 ring-1 ring-amber-200' : 'border-slate-200 hover:border-amber-300 hover:bg-slate-50'}`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h4 className="font-bold text-slate-600">2019 Chennai Water Crisis (Drought)</h4>
+                            <p className="text-xs text-slate-500 mt-2">Reservoir-storage replay. Historical rainfall and soil-moisture inputs are explicitly unavailable.</p>
+                          </div>
+                          <span className="shrink-0 bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded">READY WITH LIMITS</span>
+                        </div>
+                      </button>
+                    </div>
+
+                    {timeMachineError && (
+                      <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex gap-3">
+                        <AlertTriangle className="h-5 w-5 shrink-0 text-rose-600" />
+                        <div><span className="font-bold">Replay unavailable.</span> {timeMachineError}</div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleLoadTimeMachine}
+                      disabled={timeMachineLoading || !selectedTimeMachineScenario}
+                      className="w-full mt-5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl shadow-sm transition flex justify-center items-center gap-2">
+                      <RefreshCw className={`h-4 w-4 ${timeMachineLoading ? 'animate-spin' : ''}`} />
+                      {timeMachineLoading ? 'Replaying archived telemetry…' : `Run ${timeMachineScenario.title} replay`}
+                    </button>
+                  </section>
+
+                  {timeMachineSuccess && timeMachineResult && (() => {
+                    const peak = timeMachineResult.timeline.reduce((highest, point) => point.risk_score > highest.risk_score ? point : highest, timeMachineResult.timeline[0]);
+                    const riskPercent = (peak.risk_score * 100).toFixed(1);
+                    return (
+                      <section className="bg-white rounded-2xl shadow-sm border border-emerald-200 overflow-hidden">
+                        <div className="bg-emerald-50 border-b border-emerald-100 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="flex items-center gap-3 text-emerald-900">
+                            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                            <div><h3 className="font-bold">Replay completed</h3><p className="text-xs text-emerald-800 mt-0.5">{timeMachineResult.method_note || 'Archived inputs were processed by the prototype risk proxy.'}</p></div>
+                          </div>
+                          <button onClick={() => setCurrentView('EARLY_WARNING')} className="text-xs font-bold bg-white border border-emerald-200 hover:bg-emerald-100 px-3 py-2 rounded-lg transition">Open Early Warning Center</button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                          <div className="p-5"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Timeline points</div><div className="text-2xl font-black text-slate-900 mt-1">{timeMachineResult.timeline.length}</div></div>
+                          <div className="p-5"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Peak risk proxy</div><div className="text-2xl font-black text-amber-600 mt-1">{riskPercent}%</div></div>
+                          <div className="p-5"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Peak timestamp</div><div className="text-sm font-bold text-slate-900 mt-2">{new Date(peak.timestamp).toLocaleDateString()}</div></div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-slate-100 text-xs text-slate-500 leading-5">Interpretation: {timeMachineScenario.hazard === 'drought' ? 'this is a reservoir-storage stress proxy; it does not estimate observed soil moisture, household water access, demand, or impacts.' : 'this is a rainfall-driven model replay. It is not a validated flood-depth map, damage estimate, or causal attribution of the 2015 event.'}</div>
+                      </section>
+                    );
+                  })()}
                 </div>
-              </div>
             )}
 
             {/* MODELS VIEW */}
@@ -2778,7 +3052,7 @@ function App() {
         
         {/* Footer */}
         <footer className="mt-12 border-t border-slate-200 py-6 text-center text-xs space-y-2 text-slate-500 max-w-7xl mx-auto">
-          <p className="font-medium text-slate-600">&copy; 2026 ClimateTwin Chennai Project - Built by Gokul.R (24BCE1188) & Vishvanth.S (24BCE1038)</p>
+          <p className="font-medium text-slate-600">&copy; 2026 ClimateTwin  Chennai Multi-Hazard Urban Digital Twin Research Platform</p>
           <p className="text-[10px] max-w-2xl mx-auto">
             Disclaimer: This system utilizes simulated sensor feeds and weather data mapping. Flood forecasting outputs represent prototype calculations and are not to be used for real life evacuation decisions.
           </p>

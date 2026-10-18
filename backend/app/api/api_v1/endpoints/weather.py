@@ -10,6 +10,13 @@ from app.schemas.common import PaginatedResponse
 
 router = APIRouter()
 
+
+@router.get("/backup-analysis")
+def get_weather_backup_analysis(days: int = Query(7, ge=2, le=30)):
+    """Return locally retained provider observations and a same-time comparison."""
+    from app.core.satellite_ingestion import satellite_engine
+    return satellite_engine.get_weather_backup_analysis(days=days)
+
 @router.get("/current", response_model=Optional[WeatherResponse])
 def get_current_weather(
     location_id: int,

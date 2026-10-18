@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Dict, Any
 
 from app.core.causal_cascade import causal_engine
+from app.core.graph_provenance import GraphProvenance
 
 router = APIRouter()
 
@@ -33,3 +34,13 @@ def simulate_cascade_intervention(request: WhatIfRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal Cascade Engine Error")
+
+
+@router.get("/provenance")
+def get_cascade_graph_provenance():
+    """Expose graph evidence maturity before interpreting a cascade/GNN result."""
+    return GraphProvenance(
+        causal_engine.graph,
+        name="ClimateTwin provisional causal cascade",
+        source=str(causal_engine.metadata.get("source", "Repository configuration")),
+    ).get_report()

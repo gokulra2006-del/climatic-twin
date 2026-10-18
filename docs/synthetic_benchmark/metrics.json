@@ -1,0 +1,83 @@
+{
+  "benchmark_name": "ClimateTwin synthetic flood-risk benchmark v1",
+  "provenance": "SYNTHETIC_SIMULATION_V1",
+  "seed": 20261017,
+  "generated_rows": 3287,
+  "positive_rate": 0.0849,
+  "split": {
+    "train": "2014-2020",
+    "validation": "2021",
+    "test": "2022"
+  },
+  "models": {
+    "Logistic regression": {
+      "validation_2021": {
+        "roc_auc": 0.9038,
+        "pr_auc": 0.6544,
+        "f1": 0.5231,
+        "precision": 0.3864,
+        "recall": 0.8095,
+        "brier": 0.0731,
+        "ece": 0.1624
+      },
+      "test_2022": {
+        "roc_auc": 0.9605,
+        "pr_auc": 0.8871,
+        "f1": 0.7438,
+        "precision": 0.6429,
+        "recall": 0.8824,
+        "brier": 0.0683,
+        "ece": 0.1369
+      }
+    },
+    "Random forest": {
+      "validation_2021": {
+        "roc_auc": 0.9142,
+        "pr_auc": 0.5931,
+        "f1": 0.6038,
+        "precision": 0.5,
+        "recall": 0.7619,
+        "brier": 0.0457,
+        "ece": 0.0857
+      },
+      "test_2022": {
+        "roc_auc": 0.9343,
+        "pr_auc": 0.8512,
+        "f1": 0.8269,
+        "precision": 0.8113,
+        "recall": 0.8431,
+        "brier": 0.0495,
+        "ece": 0.0669
+      }
+    }
+  },
+  "champion": "Random forest",
+  "calibration": {
+    "test_2022_brier": 0.0495,
+    "test_2022_ece": 0.0669,
+    "meaning": "Calibration results are valid only for the simulated generator and chronological synthetic test period."
+  },
+  "input_stress_tests": {
+    "purpose": "Input sensitivity checks only. These are not field-validation metrics.",
+    "missing_telemetry_20pct": {
+      "method": "Randomly mask 20% of feature values and median-impute using the evaluation window.",
+      "valid_prediction_rate": 1.0,
+      "mean_absolute_probability_shift": 0.0472,
+      "alert_rate_at_0_5": 0.1151
+    },
+    "heavy_rain_plus_35pct": {
+      "method": "Increase rainfall and antecedent-rainfall inputs by 35%; labels are intentionally not reused.",
+      "mean_probability_change": 0.0249,
+      "alert_rate_at_0_5": 0.1836,
+      "baseline_alert_rate_at_0_5": 0.1452
+    }
+  },
+  "reproducibility": {
+    "random_seed": 20261017,
+    "dataset_sha256": "486d07491799e581168004c055f340fdc6367dfb69ea670ff1ce2f9b5aa671be",
+    "model_sha256": "ef5231422873061a21f5d1059ccf1d8a8d2e775df3dee61690bd58202070020c",
+    "rerun_command": "backend\\venv\\Scripts\\python.exe scripts\\train_synthetic_benchmark.py"
+  },
+  "deployment_policy": "BENCHMARK_ONLY_DO_NOT_DEPLOY",
+  "claim_boundary": "Metrics measure recovery of this script's simulated data-generating process. They do not establish accuracy for Chennai flood impacts, inundation depth, or public-warning performance."
+}

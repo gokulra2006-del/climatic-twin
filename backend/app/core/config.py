@@ -25,6 +25,10 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5174",
         "http://localhost:5175",  # Fallback 2
         "http://127.0.0.1:5175",
+        "http://localhost:5176",  # Fallback 3
+        "http://127.0.0.1:5176",
+        "http://localhost:5177",  # Fallback 4
+        "http://127.0.0.1:5177",
         "http://localhost:3000",
     ]
     

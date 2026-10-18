@@ -1,0 +1,87 @@
+{
+  "status": "PREPRINT READY",
+  "timestamp": "2026-10-09T11:27:40.251730+00:00",
+  "tests_passed": true,
+  "metrics_generated": true,
+  "random_seed": 42,
+  "targets": {
+    "data": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 2.01,
+      "stdout_tail": "",
+      "stderr_tail": "57:41,841 - EventCataloguePipeline - INFO - Labeling events based on strict configuration thresholds...\n2026-10-09 16:57:42,095 - EventCataloguePipeline - INFO - Generated catalogue with 37 events. Saved to C:\\Users\\gokul\\Desktop\\PROJECTS\\climatetwin\\data\\processed\\catalogue_v1\\event_catalogue.csv\n2026-10-09 16:57:42,098 - EventCataloguePipeline - INFO - Executing strict chronological splits...\n2026-10-09 16:57:42,135 - EventCataloguePipeline - INFO - Saved splits: Train=452, Val=731, Test=1062\n"
+    },
+    "baseline": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 15.96,
+      "stdout_tail": "",
+      "stderr_tail": "d\n         XGBoost 0.844 [0.802-0.880] 0.863 [0.808-0.908] 0.175 [0.123-0.229] 0.037 0.163         0.800 151        24           32       24h                  Measured\n            LSTM 0.825 [0.779-0.868] 0.891 [0.846-0.937] 0.232 [0.168-0.293] 0.368 0.385         0.600 156        19           47       24h                  Measured\n   GNN (Spatial)                 NaN                 NaN                 NaN   NaN   NaN           NaN NaN       NaN          NaN    TARGET Missing Spatial Telemetry\n"
+    },
+    "enkf": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 141.81,
+      "stdout_tail": "",
+      "stderr_tail": "ed_Sensors  Fault_Rate  RMSE_NoAssim  RMSE_Nudging  RMSE_EnKF  EnKF_Time_ms  EnKF_Memory_KB\n100                0         0.0    177.027862    220.517688 129.096128  11251.637220       32.027344\n100                0         0.1    177.027862    221.260954 131.855318   9524.859190       32.070312\n100                0         0.2    177.027862    243.080285 137.648321   8453.814507       32.027344\n100                0         0.5    177.027862    375.416823 174.421152   9124.166489       32.027344\n"
+    },
+    "gnn_lstm": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 17.76,
+      "stdout_tail": "",
+      "stderr_tail": "                       Ablation  Quantile Loss  P50 RMSE  Constraint Violations\n          1. LSTM Only (No Spatial)       0.263100  0.390384                      0\n          2. GNN Only (No Temporal)       0.751112  0.970814                      0\n             3. Single Merged Graph       0.775323  0.987439                      0\n      4. GNN-LSTM (No Assimilation)       0.778383  0.999994                      0\n5. FULL MODEL (Typed + Assimilated)       0.769857  0.978499                      0\n"
+    },
+    "uncertainty": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 13.03,
+      "stdout_tail": "",
+      "stderr_tail": "            0.800         5.833001 1.874412 1.551739\nRecalibrated (Extremes)             0.800         5.703281 4.644366 6.711136\n2026-10-09 17:00:49,536 - Uncertainty_Experiment - INFO - \n=== UNCERTAINTY DECOMPOSITION ===\n2026-10-09 17:00:49,538 - Uncertainty_Experiment - INFO - \n Observation_Uncertainty_Std  Aleatoric_Uncertainty_Std  Epistemic_Uncertainty_Std  Scenario_Uncertainty_Std\n                         0.1                   0.930531                   0.752686                  1.940706\n"
+    },
+    "cascade": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 7.32,
+      "stdout_tail": "",
+      "stderr_tail": "ctor_4              0.000          0.0120           0.0205\n2026-10-09 17:00:57,221 - Cascade_Experiments - INFO - \n=== SENSITIVITY ANALYSIS (Target: Road_Sector_4) ===\n2026-10-09 17:00:57,370 - Cascade_Experiments - INFO - \n                           Edge  Base_Risk  +10%_Impact  -10%_Impact\nSubstation_North->PumpStation_A     0.0145       0.0030       0.0015\n   PumpStation_A->Road_Sector_4     0.0145       0.0005       0.0020\n    Main_Drain_1->Road_Sector_4     0.0145       0.0015       0.0025\n"
+    },
+    "compound": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 10.33,
+      "stdout_tail": "",
+      "stderr_tail": "FICIENTS (w_i and gamma_ij) ===\n2026-10-09 17:01:07,411 - Compound_Risk_Experiment - INFO - \n         Feature  Learned_Weight_w_i\nRain_x_Reservoir            2.664724\n            Rain            1.798000\n       Reservoir            1.135778\nReservoir_x_Wind            0.740987\n     Rain_x_Heat            0.740548\nReservoir_x_Heat            0.368727\n     Wind_x_Heat           -0.121621\n            Heat           -0.132009\n            Wind           -0.225833\n     Rain_x_Wind           -1.159034\n"
+    },
+    "warnings": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 7.55,
+      "stdout_tail": "",
+      "stderr_tail": "0-09 17:01:15,183 - Human_Factors_Experiment - INFO - \n=== NASA-TLX MENTAL WORKLOAD SCORES (Lower = Better Workload) ===\n2026-10-09 17:01:15,186 - Human_Factors_Experiment - INFO - \n             Variant  Mental_Demand  Physical_Demand  Temporal_Demand  Performance    Effort  Frustration\n   A_Standard_3Level      72.577506        18.094977        70.751910    44.566920 77.394562    70.289328\nB_Uncertainty_Impact      40.152332        18.786742        52.651471    84.651056 48.119394    34.304349\n"
+    },
+    "faults": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 16.47,
+      "stdout_tail": "",
+      "stderr_tail": "            0.000000\n2026-10-09 17:01:31,614 - Fault_Tolerance_Experiment - INFO - \n=== SEASONAL DRIFT HANDLING (Adaptive vs Static) ===\n2026-10-09 17:01:31,618 - Fault_Tolerance_Experiment - INFO - \n                           Model  F1_Warning_Acc  Brier_Calib  False_Alarm_Rate  Retrains_Triggered\n          Static (No Retraining)        0.982321     0.028182          0.164244                   0\nAdaptive (KS Drift Auto-Retrain)        0.992046     0.014263          0.066860                   6\n"
+    },
+    "transfer": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 10.07,
+      "stdout_tail": "",
+      "stderr_tail": "_Score  Brier_Score\n                  Same City (Train A -> Test A) 0.976477  0.906883     0.062399\n                  Zero-Shot (Train A -> Test B) 0.972731  0.733146     0.364485\n  Domain Adaptation (Covariate Shift Alignment) 0.974334  0.916350     0.061827\nPost-Hoc Recalibration (Isotonic on 50 samples) 0.953967  0.903108     0.077952\n              Few-Shot Fine-Tuning (50 samples) 0.948765  0.842767     0.120243\n  Same City Target Baseline (Train B -> Test B) 0.974206  0.918095     0.062481\n"
+    },
+    "test": {
+      "success": true,
+      "return_code": 0,
+      "duration_seconds": 23.51,
+      "stdout_tail": "climatetwin\\backend\\venv\\Lib\\site-packages\\shap\\plots\\colors\\_colors.py:49: PendingDeprecationWarning: The set_under function will be deprecated in a future version. Use cmap.with_extremes(under=...) or Colormap(under=...) instead.\n    red_blue.set_under(gray_rgb.tolist(), 1.0)  # \"under\" is incorrectly used instead of \"bad\" in the scatter plot\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n====================== 21 passed, 17 warnings in 19.82s =======================\n",
+      "stderr_tail": ""
+    }
+  },
+  "git_commit": "5aa898d885d705ae309fc1a7efeffa52db5117d4"
+}

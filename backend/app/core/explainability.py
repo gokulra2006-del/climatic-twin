@@ -21,7 +21,7 @@ class ExplainabilityEngine:
         if self._model_cache is not None:
             return self._model_cache, self._feature_names
             
-        path = os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'best_live_model.pkl')
+        path = os.path.join(os.path.dirname(__file__), '..', 'models', 'best_live_model.pkl')
         if not os.path.exists(path):
             return None, []
         try:

@@ -79,6 +79,19 @@ class ModelMonitoringEngine:
         self.base_dir = base_dir or BASE_DIR
         self.models_dir = os.path.join(self.base_dir, "backend", "app", "models")
         self.processed_dir = os.path.join(self.base_dir, "data", "processed")
+
+        # A published checkout contains the application source but may not include
+        # the large processed-data directory.  When a parent workspace provides
+        # that directory, use it as a read-only data source instead of failing the
+        # entire monitoring screen.  Production deployments still use their own
+        # local data directory.
+        if not os.path.isdir(self.processed_dir):
+            parent_base = os.path.abspath(os.path.join(self.base_dir, ".."))
+            parent_processed = os.path.join(parent_base, "data", "processed")
+            if os.path.isdir(parent_processed):
+                self.base_dir = parent_base
+                self.processed_dir = parent_processed
+                self.models_dir = os.path.join(self.base_dir, "backend", "app", "models")
         
         # Load alignment engine for historical distributions
         self.aligner = LiveFeatureAlignmentEngine(self.base_dir)
@@ -163,46 +176,13 @@ class ModelMonitoringEngine:
         return base_preds
 
     def _initialize_live_buffer(self) -> List[Dict[str, Any]]:
-        """Initializes rolling live buffer representing recent telemetry."""
-        buffer = []
-        now = datetime.now(timezone.utc)
-        
-        # Seed 30 days of recent realistic observations centered around recent Chennai weather
-        np.random.seed(101)
-        for d in range(30, 0, -1):
-            ts = now - timedelta(days=d)
-            # Baseline dry-to-moderate pre-monsoon Chennai conditions
-            # with slight variations
-            sample = {
-                "timestamp": ts.isoformat(),
-                "rainfall_daily": float(max(0.0, np.random.normal(12.5, 18.0))),
-                "rainfall_3d_sum": float(max(0.0, np.random.normal(32.0, 30.0))),
-                "rainfall_5d_sum": float(max(0.0, np.random.normal(48.0, 42.0))),
-                "rainfall_7d_sum": float(max(0.0, np.random.normal(65.0, 50.0))),
-                "rainfall_rate_1h": float(max(0.0, np.random.normal(1.2, 1.8))),
-                "rainfall_trend": float(np.random.normal(0.0, 3.5)),
-                "temp_mean": float(np.random.normal(29.8, 1.6)),
-                "temp_max": float(np.random.normal(34.2, 2.0)),
-                "temp_min": float(np.random.normal(25.4, 1.4)),
-                "dew_point_mean": float(np.random.normal(24.1, 1.2)),
-                "dew_point_depression": float(max(0.5, np.random.normal(5.7, 1.5))),
-                "wind_speed_mean": float(max(0.5, np.random.normal(3.8, 1.1))),
-                "wind_speed_trend": float(np.random.normal(0.0, 0.8)),
-                "POONDI": float(max(100.0, min(3231.0, np.random.normal(2450.0, 200.0)))),
-                "CHOLAVARAM": float(max(50.0, min(1081.0, np.random.normal(680.0, 80.0)))),
-                "REDHILLS": float(max(100.0, min(3300.0, np.random.normal(2850.0, 150.0)))),
-                "CHEMBARAMBAKKAM": float(max(100.0, min(3645.0, np.random.normal(2980.0, 220.0)))),
-                "total_reservoir_level": float(max(500.0, min(11257.0, np.random.normal(8960.0, 500.0)))),
-                "reservoir_fill_ratio": float(max(0.05, min(1.0, np.random.normal(0.79, 0.05)))),
-                "reservoir_storage_rate_1d": float(np.random.normal(5.0, 25.0)),
-                "predicted_probability": float(max(0.01, min(0.95, np.random.exponential(scale=0.07)))),
-                "epistemic_variance": float(max(0.001, np.random.normal(0.008, 0.003))),
-                "prediction_interval_width": float(max(0.05, np.random.normal(0.14, 0.03))),
-                "uncertainty_level": "LOW",
-                "data_quality_score": 0.96
-            }
-            buffer.append(sample)
-        return buffer
+        """Start with no history; only recorded observations may drive drift claims."""
+        # Synthetic seed records previously made the dashboard look populated even
+        # when it had received no telemetry.  Drift and retraining recommendations
+        # are meaningful only after the monitor receives genuine observations via
+        # ``record_live_observation``.  The API already renders an explicit
+        # insufficient-data state until that point.
+        return []
 
     def record_live_observation(self, observation: Dict[str, Any]):
         """Appends a real-time observation into the rolling monitoring buffer."""
@@ -400,11 +380,12 @@ class ModelMonitoringEngine:
         df_live = self.get_live_data_window(window_str)
         if len(df_live) < 5 or "prediction_interval_width" not in df_live.columns:
             return {
-                "status": "HEALTHY",
-                "epistemic_variance_mean": 0.008,
-                "interval_width_mean": 0.14,
-                "high_uncertainty_frequency": 0.0,
-                "condition": "NORMAL_CONFIDENCE"
+                "status": "INSUFFICIENT_DATA",
+                "condition": "NO_LIVE_UNCERTAINTY_HISTORY",
+                "message": "At least five recorded live model outputs are required for an uncertainty trend.",
+                "epistemic_variance_mean": None,
+                "prediction_interval_width_mean": None,
+                "high_uncertainty_frequency": None,
             }
             
         vars_ = df_live["epistemic_variance"].dropna().values
@@ -587,6 +568,17 @@ class ModelMonitoringEngine:
         u_status = uncertainty.get("status", "HEALTHY")
         pattern = temporal.get("pattern", "STABLE CONDITIONS")
         perf_degraded = perf_eval.get("performance_degradation_detected", False)
+
+        # Never infer that a model is healthy merely because no telemetry has
+        # been received.  This is a data-collection state, not a model finding.
+        if "INSUFFICIENT_DATA" in {f_status, p_status, u_status}:
+            return {
+                "readiness_score": 0,
+                "model_status": "AWAITING_LIVE_HISTORY",
+                "recommendation": "CONTINUE LIVE DATA COLLECTION",
+                "reason": "At least five recorded live observations and model outputs are required before drift or retraining readiness can be assessed.",
+                "data_quality_gated": False
+            }
         
         # 1. Check Data Quality Gate first
         if dq_status == "DATA QUALITY ISSUE":

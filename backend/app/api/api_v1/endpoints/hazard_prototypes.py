@@ -97,21 +97,24 @@ def get_latest_heatwave() -> dict:
         from app.core.satellite_ingestion import satellite_engine
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         hw_live = sat_data.get('heatwave', {})
+        telemetry_meta = sat_data.get('telemetry_meta', {})
+        if not hw_live:
+            raise HTTPException(status_code=503, detail=telemetry_meta.get("message", "Live weather telemetry is unavailable."))
         
         # Use ONLY Live Data
         temp_max_latest = hw_live.get('air_temp_c', 35.0)
         apparent_temp = hw_live.get('apparent_temp_c', 36.0)
         humidity = hw_live.get('humidity_percent', 65.0)
-        lst = hw_live.get('lst_celsius', temp_max_latest)
-        uv = hw_live.get('uv_index', 8.0)
-        solar_rad = hw_live.get('solar_radiation_wm2', 600.0)
-        cloud = hw_live.get('cloud_cover_percent', 20.0)
-        vpd = hw_live.get('vapor_pressure_deficit_kpa', 1.5)
-        wind = hw_live.get('wind_speed_kmh', 10.0)
+        lst = hw_live.get('lst_celsius')
+        uv = hw_live.get('uv_index')
+        solar_rad = hw_live.get('solar_radiation_wm2')
+        cloud = hw_live.get('cloud_cover_percent')
+        vpd = hw_live.get('vapor_pressure_deficit_kpa')
+        wind = hw_live.get('wind_speed_kmh')
         
         prob = _calc_heatwave_prob(apparent_temp, temp_max_latest, humidity)
-        if uv > 8.0: prob += 0.1
-        if vpd > 2.0: prob += 0.1
+        if uv is not None and uv > 8.0: prob += 0.1
+        if vpd is not None and vpd > 2.0: prob += 0.1
         prob = min(1.0, prob)
         p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
         
@@ -158,7 +161,7 @@ def get_latest_heatwave() -> dict:
             "lead_time_hours": 24,
             "lead_time_text": "Live Observation Warning",
             "thresholds_disclaimer": "Live Real-Time Heat Index & LST Model",
-            "contributing_features": {
+            "contributing_features": {k: v for k, v in {
                 "Apparent Temp (°C)": apparent_temp,
                 "Air Temp (°C)": temp_max_latest,
                 "Surface LST (°C)": lst,
@@ -168,10 +171,11 @@ def get_latest_heatwave() -> dict:
                 "Cloud Cover (%)": cloud,
                 "Vapor Pressure Deficit (kPa)": vpd,
                 "Wind Speed (km/h)": wind
-            },
+            }.items() if v is not None},
             "timestamp": datetime.now(timezone.utc),
             "data_source": hw_live.get("source", "Live Open-Meteo"),
-            "simulation_label": "LIVE TELEMETRY",
+            "simulation_label": "LIVE WEATHER + DERIVED RISK MODEL",
+            "telemetry_mode": telemetry_meta.get("mode", "LIVE_WEATHER_API"),
             "forecast_metrics": {
                 "peak_temp": peak_temp,
                 "peak_heat_index": peak_heat_index,
@@ -186,21 +190,66 @@ def get_latest_heatwave() -> dict:
 
 
 # --- DROUGHT ---
-def _calc_drought_prob(soil_moist_rz):
-    deficit_ratio = max(0.0, 1.0 - (soil_moist_rz / 0.30)) # 0.30 is healthy baseline
-    return min(1.0, max(0.0, deficit_ratio * 1.5))
+def _calc_drought_prob(soil_moist_rz, reservoir_storage_pct=75.0, rain_7d=10.0):
+    # Soil moisture deficit (0.30 is healthy field capacity, <0.15 is severe deficit)
+    sm_deficit = max(0.0, 1.0 - (soil_moist_rz / 0.30))
+    # Reservoir storage depletion penalty (below 40% escalates drought severity)
+    res_deficit = max(0.0, 1.0 - (reservoir_storage_pct / 100.0))
+    # Rainfall deficit indicator (normal 7d is ~25mm)
+    rain_deficit = max(0.0, 1.0 - (rain_7d / 25.0))
+    
+    # Combined Multi-Indicator Drought Index (MIDI)
+    composite_score = (sm_deficit * 0.45) + (res_deficit * 0.35) + (rain_deficit * 0.20)
+    return min(1.0, max(0.0, composite_score))
 
 def get_latest_drought() -> dict:
     try:
         from app.core.satellite_ingestion import satellite_engine
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         dr_live = sat_data.get('drought', {})
+        flood_live = sat_data.get('flood', {})
+        telemetry_meta = sat_data.get('telemetry_meta', {})
+        if not dr_live or not flood_live:
+            raise HTTPException(status_code=503, detail=telemetry_meta.get("message", "Live weather telemetry is unavailable."))
         
-        soil_moisture_surface = dr_live.get('soil_moisture_surface', 0.20)
-        soil_moisture_rz = dr_live.get('soil_moisture_root_zone', 0.25)
+        soil_moisture_surface = dr_live.get('soil_moisture_surface', 0.22)
+        soil_moisture_rz = dr_live.get('soil_moisture_root_zone', 0.24)
         
-        prob = _calc_drought_prob(soil_moisture_rz)
+        # Calculate reservoir storage from flood telemetry or default capacities
+        total_storage = flood_live.get('total_reservoir_level', 8000.0)
+        total_capacity = 11257.0  # Combined capacity of Poondi, Cholavaram, Red Hills, Chembarambakkam
+        res_pct = round((total_storage / total_capacity) * 100.0, 1)
+        rain_7d = flood_live.get('rainfall_7d_sum', 12.0)
+        rain_30d_est = round(rain_7d * 4.2, 1)
+        
+        # Standardized Precipitation-Evapotranspiration & Soil Deficit Index
+        smi = round(((soil_moisture_rz - 0.12) / (0.35 - 0.12)) * 100.0, 1) # Soil Water Availability %
+        
+        prob = _calc_drought_prob(soil_moisture_rz, res_pct, rain_7d)
         p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
+        
+        # Early Warning Status
+        if prob >= 0.70 or res_pct < 25.0:
+            drought_phase = "EMERGENCY: STAGE 3 DROUGHT"
+            action_code = "WATER_RATIONING_MANDATORY"
+        elif prob >= 0.45 or res_pct < 45.0:
+            drought_phase = "WARNING: STAGE 2 AGRICULTURAL STRESS"
+            action_code = "GROUNDWATER_CONSERVATION_ACTIVE"
+        elif prob >= 0.25:
+            drought_phase = "ADVISORY: STAGE 1 WATCH"
+            action_code = "VOLUNTARY_CONSERVATION"
+        else:
+            drought_phase = "NOMINAL: OPTIMAL WATER STORAGE"
+            action_code = "STANDARD_OPERATIONS"
+
+        trend_7d = dr_live.get('trend_7d', [])
+        
+        reservoirs_breakdown = {
+            "POONDI": {"current_mcft": flood_live.get('POONDI', 2200), "capacity_mcft": 3231, "pct": round((flood_live.get('POONDI', 2200) / 3231) * 100, 1)},
+            "CHOLAVARAM": {"current_mcft": flood_live.get('CHOLAVARAM', 600), "capacity_mcft": 1081, "pct": round((flood_live.get('CHOLAVARAM', 600) / 1081) * 100, 1)},
+            "REDHILLS": {"current_mcft": flood_live.get('REDHILLS', 2400), "capacity_mcft": 3300, "pct": round((flood_live.get('REDHILLS', 2400) / 3300) * 100, 1)},
+            "CHEMBARAMBAKKAM": {"current_mcft": flood_live.get('CHEMBARAMBAKKAM', 2800), "capacity_mcft": 3645, "pct": round((flood_live.get('CHEMBARAMBAKKAM', 2800) / 3645) * 100, 1)}
+        }
             
         return {
             "predicted_state": 1 if prob >= 0.5 else 0,
@@ -210,15 +259,25 @@ def get_latest_drought() -> dict:
             "probability_p90": p90,
             "risk_level": map_risk_level_generic(prob),
             "lead_time_hours": 168,
-            "lead_time_text": "Live Root-Zone Assessment",
-            "thresholds_disclaimer": "Live Soil Moisture Deficit Model",
+            "lead_time_text": "7-Day Multi-Index Forecast",
+            "thresholds_disclaimer": "Coupled Root-Zone Moisture & CMWSSB Reservoir Storage Twin",
+            "drought_phase": drought_phase,
+            "action_code": action_code,
             "contributing_features": {
-                "Surface Moisture (0-7cm)": soil_moisture_surface,
-                "Root Zone Moisture (7-28cm)": soil_moisture_rz
+                "Root Zone Moisture (m3/m3)": soil_moisture_rz,
+                "Surface Moisture (m3/m3)": soil_moisture_surface,
+                "Total Reservoir Storage (%)": res_pct,
+                "Total Storage (mcft)": round(total_storage, 1),
+                "7-Day Rainfall (mm)": rain_7d,
+                "30-Day Est Rainfall (mm)": rain_30d_est,
+                "Soil Water Availability (%)": max(0.0, min(100.0, smi))
             },
+            "reservoirs": reservoirs_breakdown,
+            "trend_7d": trend_7d,
             "timestamp": datetime.now(timezone.utc),
-            "data_source": dr_live.get("source", "Live Copernicus/NOAA"),
-            "simulation_label": "LIVE TELEMETRY"
+            "data_source": "Open-Meteo weather-derived soil fields + simulated CMWSSB reservoir model",
+            "simulation_label": "LIVE WEATHER + DERIVED DROUGHT MODEL",
+            "telemetry_mode": telemetry_meta.get("mode", "LIVE_WEATHER_API")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Drought calculation failed: {str(e)}")
@@ -238,14 +297,18 @@ def get_latest_wildfire() -> dict:
         from app.core.satellite_ingestion import satellite_engine
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         wf_live = sat_data.get('wildfire', {})
+        telemetry_meta = sat_data.get('telemetry_meta', {})
+        if not wf_live:
+            raise HTTPException(status_code=503, detail=telemetry_meta.get("message", "Live weather telemetry is unavailable."))
         
         fwi = wf_live.get('fwi_estimate', 5.0)
         wind = wf_live.get('wind_speed_kmh', 10.0)
         surface_temp = wf_live.get('surface_temp_c', 30.0)
-        active_fires = wf_live.get('active_fires_detected', 0)
-        max_frp = wf_live.get('max_frp_mw', 0.0)
+        active_fires = wf_live.get('active_fires_detected')
+        max_frp = wf_live.get('max_frp_mw')
         
-        prob = _calc_wildfire_prob(fwi, wind, active_fires)
+        # An unavailable NASA FIRMS feed is not evidence of zero hotspots.
+        prob = _calc_wildfire_prob(fwi, wind, active_fires or 0)
         p10, p50, p90 = max(0, prob - 0.05), prob, min(1.0, prob + 0.05)
         
         return {
@@ -256,18 +319,19 @@ def get_latest_wildfire() -> dict:
             "probability_p90": p90,
             "risk_level": map_risk_level_generic(prob),
             "lead_time_hours": 48,
-            "lead_time_text": "Live FWI Proxy Warning",
-            "thresholds_disclaimer": "Live Fire Weather Index (FWI) Evaluation",
-            "contributing_features": {
+            "lead_time_text": "Live weather-derived fire-risk proxy",
+            "thresholds_disclaimer": "Weather-derived fire-risk proxy. Hotspot evidence is shown only when NASA FIRMS is configured and returns a response.",
+            "contributing_features": {k: v for k, v in {
                 "Fire Weather Index (FWI)": fwi,
                 "NASA Active Hotspots (VIIRS)": active_fires,
                 "Max Fire Radiative Power (MW)": max_frp,
                 "Wind Speed (km/h)": wind,
                 "Surface Temp (°C)": surface_temp
-            },
+            }.items() if v is not None},
             "timestamp": datetime.now(timezone.utc),
             "data_source": wf_live.get("source", "Live Open-Meteo"),
-            "simulation_label": "LIVE TELEMETRY"
+            "simulation_label": "LIVE WEATHER + FIRE-WEATHER PROXY",
+            "telemetry_mode": telemetry_meta.get("mode", "LIVE_WEATHER_API")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Wildfire calculation failed: {str(e)}")
@@ -286,6 +350,9 @@ def get_latest_extreme_rainfall() -> dict:
         from app.core.satellite_ingestion import satellite_engine
         sat_data = satellite_engine.get_latest_satellite_telemetry()
         er_live = sat_data.get('extreme_rainfall', {})
+        telemetry_meta = sat_data.get('telemetry_meta', {})
+        if not er_live:
+            raise HTTPException(status_code=503, detail=telemetry_meta.get("message", "Live weather telemetry is unavailable."))
         
         cape = er_live.get('cape_j_kg', 0.0)
         rain = er_live.get('current_precip_mm', 0.0)
@@ -309,7 +376,8 @@ def get_latest_extreme_rainfall() -> dict:
             },
             "timestamp": datetime.now(timezone.utc),
             "data_source": er_live.get("source", "Live Open-Meteo"),
-            "simulation_label": "LIVE TELEMETRY"
+            "simulation_label": "LIVE WEATHER + CONVECTIVE PROXY",
+            "telemetry_mode": telemetry_meta.get("mode", "LIVE_WEATHER_API")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extreme Rainfall calculation failed: {str(e)}")

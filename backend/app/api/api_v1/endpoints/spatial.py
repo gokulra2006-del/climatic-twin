@@ -16,6 +16,12 @@ class SpatialAssessRequest(BaseModel):
     flood_probability: Optional[float] = Field(0.28, description="ML flood probability [0.0, 1.0]")
     reservoir_fill_ratio: Optional[float] = Field(0.65, description="Aggregate reservoir fill ratio [0.0, 1.0]")
 
+
+class InundationScenarioRequest(SpatialAssessRequest):
+    scenario_name: str = Field("Untitled scenario", max_length=100)
+    drainage_efficiency: float = Field(0.70, ge=0.0, le=1.0)
+    rainfall_multiplier: float = Field(1.0, ge=0.0, le=5.0)
+
 @router.get("/flood-risk")
 def get_spatial_flood_risk():
     """
@@ -122,4 +128,47 @@ def assess_custom_spatial_scenario(payload: SpatialAssessRequest):
         "status": "success",
         "evaluated_parameters": env_state,
         "zones": zones
+    }
+
+
+@router.post("/inundation-scenario")
+def create_inundation_scenario(payload: InundationScenarioRequest):
+    """Return a zone-based GeoJSON scenario layer, never observed flood depth."""
+    parameters = payload.model_dump()
+    parameters["rainfall_daily"] *= parameters["rainfall_multiplier"]
+    parameters["runoff_indicator"] = min(
+        1.0,
+        parameters["runoff_indicator"] + (1.0 - parameters["drainage_efficiency"]) * 0.35,
+    )
+    zones = spatial_inundation_engine.assess_all_zones(parameters)
+    features = []
+    for zone in zones:
+        bounds = zone["bounds"]
+        geometry = {
+            "type": "Polygon",
+            "coordinates": [[
+                [bounds["min_lon"], bounds["min_lat"]], [bounds["max_lon"], bounds["min_lat"]],
+                [bounds["max_lon"], bounds["max_lat"]], [bounds["min_lon"], bounds["max_lat"]],
+                [bounds["min_lon"], bounds["min_lat"]],
+            ]],
+        }
+        relative_depth_m = round(zone["spatial_flood_impact_index"] * 0.5, 3)
+        features.append({
+            "type": "Feature",
+            "geometry": geometry,
+            "properties": {
+                "zone_id": zone["zone_id"],
+                "name": zone["name"],
+                "severity": zone["relative_severity_class"],
+                "relative_inundation_index": zone["spatial_flood_impact_index"],
+                "scenario_depth_proxy_m": relative_depth_m,
+                "depth_status": "SCENARIO PROXY — NOT OBSERVED OR HYDRAULICALLY VALIDATED",
+            },
+        })
+    return {
+        "status": "SCENARIO_ONLY",
+        "scenario_name": payload.scenario_name,
+        "parameters": parameters,
+        "geojson": {"type": "FeatureCollection", "features": features},
+        "disclaimer": "Terrain-constrained susceptibility scenario. The depth proxy is NOT OBSERVED and is not a measured or hydraulically validated flood-depth forecast.",
     }

@@ -6,3 +6,4 @@ from .hazard import HazardType, HazardEvent, HistoricalEvent, HazardPrediction
 from .risk import DigitalTwinState, RiskAssessment, WarningLevel, Alert
 from .model import PredictionModel, ModelPrediction, ModelEvaluation
 from .log import SystemLog
+from .impact_record import ImpactRecord
