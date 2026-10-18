@@ -131,6 +131,18 @@ export default function ImpactCatalogue() {
     }
   };
 
+  const getConfidenceDisplay = (record, detailed = false) => {
+    if (record.evidence_status === 'synthetic') {
+      return detailed
+        ? <span className="font-semibold text-amber-800">Not scoreable — synthetic demonstration record</span>
+        : <span title="Synthetic demonstration records cannot receive real-evidence confidence scores." className="inline-flex rounded border border-amber-300 bg-amber-50 px-2 py-0.5 font-sans text-[10px] font-bold uppercase text-amber-800">Not scoreable</span>;
+    }
+    if (record.confidence === null || record.confidence === undefined) {
+      return <span className="text-slate-500">Not assessed</span>;
+    }
+    return `${(record.confidence * 100).toFixed(detailed ? 1 : 0)}%`;
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fadeIn pb-12 font-sans">
       
@@ -284,7 +296,7 @@ export default function ImpactCatalogue() {
                   <th className="px-5 py-3.5">Impact Category</th>
                   <th className="px-5 py-3.5">Severity</th>
                   <th className="px-5 py-3.5">Evidence Status</th>
-                  <th className="px-5 py-3.5">Confidence</th>
+                  <th className="px-5 py-3.5">Evidence Confidence</th>
                   <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
@@ -309,7 +321,7 @@ export default function ImpactCatalogue() {
                       </td>
                       <td className="px-5 py-3.5">{getSeverityBadge(r.severity)}</td>
                       <td className="px-5 py-3.5">{getEvidenceBadge(r.evidence_status)}</td>
-                      <td className="px-5 py-3.5 font-mono font-bold text-slate-700">{(r.confidence * 100).toFixed(0)}%</td>
+                      <td className="px-5 py-3.5 font-mono font-bold text-slate-700">{getConfidenceDisplay(r)}</td>
                       <td className="px-5 py-3.5 text-right">
                         <span className="text-indigo-600 font-bold hover:underline inline-flex items-center gap-1">
                           Inspect <ChevronRight className="h-3 w-3" />
@@ -377,8 +389,8 @@ export default function ImpactCatalogue() {
                   <span className="font-mono text-slate-800">{selectedRecord.latitude}°N, {selectedRecord.longitude}°E</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Model Confidence:</span>
-                  <span className="font-mono font-bold text-indigo-700">{(selectedRecord.confidence * 100).toFixed(1)}%</span>
+                  <span className="text-slate-500">Evidence Confidence:</span>
+                  <span className="font-mono font-bold text-indigo-700">{getConfidenceDisplay(selectedRecord, true)}</span>
                 </div>
               </div>
 
