@@ -24,6 +24,35 @@ router = APIRouter()
 # In-memory storage fallback for zero-database setups
 _in_memory_records: List[Dict[str, Any]] = []
 
+# This citywide record is a primary-source-backed historical observation.  Its
+# coordinate is explicitly a study-area centroid: it must not be interpreted
+# as a ward-level extent, depth or individual impact location.
+VERIFIED_HISTORICAL_IMPACTS = [
+    {
+        "id": 100,
+        "event_id": "IMP-CHN-2015-CWC-01",
+        "start_time": "2015-12-01T00:00:00Z",
+        "end_time": "2015-12-05T23:59:59Z",
+        "latitude": 13.0827,
+        "longitude": 80.2707,
+        "zone": "Chennai Metropolitan Area (citywide)",
+        "impact_type": "flood_extent",
+        "severity": "critical",
+        "source_name": "Central Water Commission, Flood Forecasting and Warning Network Annual Report 2015, §4.12.7.2.1",
+        "source_url": "https://www.cwc.gov.in/sites/default/files/ffwnpas2015.pdf",
+        "evidence_status": "historical_real",
+        "confidence": 0.78,
+        "notes": (
+            "Primary Government of India source. The report documents unprecedented torrential rain and inundation "
+            "across the Chennai Metropolitan Area in the first week of December 2015. Evidence confidence reflects "
+            "a traceable primary source and dated citywide observation; it is reduced because the report does not provide "
+            "a ward-level flood boundary, water depth, or a coordinate for this event. The displayed coordinate is the "
+            "Chennai study-area centroid, not an observed impact point."
+        ),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+]
+
 # Demonstration records keep the user interface usable before a curator imports
 # an evidence-checked catalogue. They are intentionally synthetic: their names,
 # locations, timings and URLs must not be cited as municipal records.
@@ -151,6 +180,7 @@ OFFICIAL_EVIDENCE_SOURCES = [
 ]
 
 if not _in_memory_records:
+    _in_memory_records.extend(VERIFIED_HISTORICAL_IMPACTS)
     _in_memory_records.extend(SEED_IMPACTS)
 
 @router.get("/", response_model=List[Dict[str, Any]])

@@ -175,7 +175,6 @@ def download_evidence_template(template_name: str) -> Response:
     templates = {
         "impact_catalogue": (
             "event_id,start_time,end_time,latitude,longitude,zone,impact_type,severity,source_name,source_url,evidence_status,confidence,notes\n"
-            "CHN-YYYY-001,YYYY-MM-DDTHH:MM:SSZ,,13.0827,80.2707,Zone name,waterlogging,moderate,Official source,https://example.org/source,historical_real,0.9,Describe verification method\n"
         ),
         "infrastructure_dependencies": (
             "asset_id,asset_type,depends_on_asset_id,dependency_type,source_name,source_url,evidence_status,valid_from,notes\n"
