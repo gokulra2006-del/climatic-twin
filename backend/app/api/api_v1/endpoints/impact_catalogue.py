@@ -115,6 +115,41 @@ SEED_IMPACTS = [
     }
 ]
 
+# These are source entry points, not imported impact observations.  A curator
+# must extract the exact time, place, impact and supporting passage before a
+# record can be labelled historical_real.  Keeping the registry separate from
+# the catalogue prevents a useful source link from becoming an invented event.
+OFFICIAL_EVIDENCE_SOURCES = [
+    {
+        "name": "Central Water Commission — Flood Forecasting and Warning Network, 2015",
+        "organisation": "Government of India / Central Water Commission",
+        "url": "https://www.cwc.gov.in/sites/default/files/ffwnpas2015.pdf",
+        "use_for": "2015 flood chronology, rainfall and basin/reservoir context",
+        "record_rule": "Capture the exact report page and only create an impact record where the report identifies the impact and location.",
+    },
+    {
+        "name": "India Meteorological Department — Rainfall Information",
+        "organisation": "Government of India / India Meteorological Department",
+        "url": "https://mausam.imd.gov.in/responsive/rainfallinformation_state.php",
+        "use_for": "station and district rainfall inputs; not a direct road-closure or damage label",
+        "record_rule": "Use as a meteorological driver or corroborating source, paired with an impact source for impact validation.",
+    },
+    {
+        "name": "Greater Chennai Corporation — Storm Water Department",
+        "organisation": "Greater Chennai Corporation",
+        "url": "https://chennaicorporation.gov.in/gcc/department/storm-water/",
+        "use_for": "drainage-system context and flood-prone-area infrastructure",
+        "record_rule": "Do not infer a waterlogging event from infrastructure context alone; link an event-specific official record.",
+    },
+    {
+        "name": "Greater Chennai Corporation — Public Grievance Redressal",
+        "organisation": "Greater Chennai Corporation",
+        "url": "https://erp.chennaicorporation.gov.in/pgr/",
+        "use_for": "case-level complaint references where the authorised data owner permits research use",
+        "record_rule": "Preserve the complaint/reference ID, retrieval date, location granularity and applicable privacy/usage restrictions.",
+    },
+]
+
 if not _in_memory_records:
     _in_memory_records.extend(SEED_IMPACTS)
 
@@ -173,6 +208,12 @@ def create_impact_record(
     _in_memory_records.append(stored)
     return stored
 
+
+@router.get("/evidence-sources", response_model=List[Dict[str, str]])
+def list_official_evidence_sources():
+    """Return verified source entry points without converting them into event labels."""
+    return OFFICIAL_EVIDENCE_SOURCES
+
 @router.get("/export/csv")
 def export_impact_records_csv(db: Session = Depends(deps.get_db_optional)):
     """Export the entire Chennai Impact Catalogue as CSV."""
@@ -211,6 +252,12 @@ async def import_impact_records_csv(
 
     for idx, row in enumerate(reader):
         try:
+            evidence_status = row.get("evidence_status", "unverified").strip().lower()
+            confidence_value = row.get("confidence", "").strip()
+            if evidence_status == "historical_real" and not confidence_value:
+                raise ValueError(
+                    "historical_real records require a curator-assigned confidence (0–1) and a traceable source"
+                )
             record_create = ImpactRecordCreate(
                 event_id=row["event_id"],
                 start_time=datetime.fromisoformat(row["start_time"].replace("Z", "+00:00")),
@@ -222,8 +269,8 @@ async def import_impact_records_csv(
                 severity=row.get("severity", "moderate"),
                 source_name=row["source_name"],
                 source_url=row.get("source_url"),
-                evidence_status=row.get("evidence_status", "unverified"),
-                confidence=float(row.get("confidence", 0.7)),
+                evidence_status=evidence_status,
+                confidence=float(confidence_value) if confidence_value else 0.0,
                 notes=row.get("notes")
             )
             create_impact_record(record_create, db)

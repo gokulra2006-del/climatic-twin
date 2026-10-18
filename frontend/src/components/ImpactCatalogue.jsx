@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Database, AlertTriangle, ShieldCheck, Filter, Download, 
-  MapPin, Clock, ExternalLink, RefreshCw, Info, ChevronRight, X, FileText, Upload
+  MapPin, Clock, ExternalLink, RefreshCw, Info, ChevronRight, X, FileText, Upload, BookOpen, CheckCircle2
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
@@ -23,6 +23,8 @@ export default function ImpactCatalogue() {
   const [evalResult, setEvalResult] = useState(null);
   const [importMessage, setImportMessage] = useState('');
   const [warningCount, setWarningCount] = useState(0);
+  const [evidenceGuideOpen, setEvidenceGuideOpen] = useState(false);
+  const [officialSources, setOfficialSources] = useState([]);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -53,9 +55,19 @@ export default function ImpactCatalogue() {
     }
   };
 
+  const fetchOfficialSources = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/impacts/evidence-sources`);
+      if (res.ok) setOfficialSources(await res.json());
+    } catch (_) {
+      setOfficialSources([]);
+    }
+  };
+
   useEffect(() => {
     fetchRecords();
     fetchWarnings();
+    fetchOfficialSources();
   }, [zoneFilter, typeFilter, statusFilter, severityFilter]);
 
   const handleCsvImport = async (event) => {
@@ -134,8 +146,8 @@ export default function ImpactCatalogue() {
   const getConfidenceDisplay = (record, detailed = false) => {
     if (record.evidence_status === 'synthetic') {
       return detailed
-        ? <span className="font-semibold text-amber-800">Not scoreable — synthetic demonstration record</span>
-        : <span title="Synthetic demonstration records cannot receive real-evidence confidence scores." className="inline-flex rounded border border-amber-300 bg-amber-50 px-2 py-0.5 font-sans text-[10px] font-bold uppercase text-amber-800">Not scoreable</span>;
+        ? <span className="font-semibold text-amber-800">Source needed — add a traceable official record</span>
+        : <span title="Add a traceable source before assigning evidence confidence." className="inline-flex rounded border border-amber-300 bg-amber-50 px-2 py-0.5 font-sans text-[10px] font-bold uppercase text-amber-800">Add source</span>;
     }
     if (record.confidence === null || record.confidence === undefined) {
       return <span className="text-slate-500">Not assessed</span>;
@@ -160,11 +172,17 @@ export default function ImpactCatalogue() {
             Historical Urban Impact Catalogue
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Curated evidence workspace connecting model warnings to documented impacts. Demonstration records are never treated as ground truth.
+            Curate traceable impact evidence, inspect source provenance, and validate exported warnings against verified historical records.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setEvidenceGuideOpen(true)}
+            className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+          >
+            <BookOpen className="h-4 w-4" /> Add real evidence
+          </button>
           <button
             onClick={() => setEvalModal(true)}
             className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
@@ -174,11 +192,11 @@ export default function ImpactCatalogue() {
           </button>
           
           <a
-            href={`${API_URL}/api/impacts/export/csv`}
+            href={`${API_URL}/api/research-operations/templates/impact_catalogue`}
             download
             className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition border border-slate-200 flex items-center gap-1.5"
           >
-            <Download className="h-4 w-4" /> Export CSV
+            <Download className="h-4 w-4" /> CSV template
           </a>
 
           <label className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition border border-slate-200 flex items-center gap-1.5 cursor-pointer">
@@ -206,8 +224,8 @@ export default function ImpactCatalogue() {
       <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex items-start gap-3 text-xs text-blue-900">
         <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
         <div>
-          <span className="font-bold">Provenance & Integrity Policy: </span>
-          Records must be curated with a traceable source before they can be labelled <strong className="text-emerald-700">HISTORICAL REAL</strong>. Bundled records are clearly labelled <strong>SYNTHETIC TEST</strong> and cannot produce validation scores.
+          <span className="font-bold">Evidence confidence is source-based: </span>
+          A percentage is shown only after a curator links an event to a traceable record. Use <strong className="text-emerald-700">Add real evidence</strong> to start from official source channels. Demonstration scenarios stay separate from historical evidence.
         </div>
       </div>
 
@@ -276,7 +294,7 @@ export default function ImpactCatalogue() {
       {/* 4. Catalogue Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center text-xs font-semibold text-slate-600">
-          <span>Displaying <strong>{records.length}</strong> Documented Impact Events</span>
+          <span>Displaying <strong>{records.length}</strong> Catalogue records</span>
           <span className="text-slate-400 font-normal">Click any record to inspect verifiable source provenance</span>
         </div>
 
@@ -341,6 +359,52 @@ export default function ImpactCatalogue() {
           </div>
         )}
       </div>
+
+      {evidenceGuideOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] border border-slate-200 shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-start gap-3">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Evidence intake workflow</div>
+                <h3 className="font-bold text-lg text-slate-900 mt-1">Turn a source into defensible evidence</h3>
+                <p className="text-xs text-slate-500 mt-1">This workflow prevents a source link, a model result, or a demonstration scenario from being mistaken for a verified impact observation.</p>
+              </div>
+              <button onClick={() => setEvidenceGuideOpen(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-5 text-xs">
+              <ol className="grid sm:grid-cols-2 gap-3">
+                {[
+                  ['1', 'Choose an official source', 'Start with a report or authorised record; retain its permanent URL and access date.'],
+                  ['2', 'Extract the exact observation', 'Record the event date, location, impact type, severity evidence and report page or reference ID.'],
+                  ['3', 'Corroborate when possible', 'Pair impact evidence with IMD/CWC drivers or a second independent authorised source.'],
+                  ['4', 'Import and review', 'Use the CSV template, assign confidence only after review, then run warning-impact validation.'],
+                ].map(([number, title, description]) => (
+                  <li key={number} className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex gap-3">
+                    <span className="h-6 w-6 shrink-0 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-black">{number}</span>
+                    <div><div className="font-bold text-slate-800">{title}</div><p className="text-slate-500 mt-0.5 leading-relaxed">{description}</p></div>
+                  </li>
+                ))}
+              </ol>
+              <div>
+                <div className="flex items-center gap-2 font-bold text-slate-800 mb-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Official source starting points</div>
+                <div className="space-y-2">
+                  {officialSources.length ? officialSources.map((source) => (
+                    <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-slate-200 p-3 hover:border-indigo-300 hover:bg-indigo-50/40 transition">
+                      <div className="font-bold text-indigo-700 flex items-center justify-between gap-3">{source.name}<ExternalLink className="h-3.5 w-3.5 shrink-0" /></div>
+                      <div className="text-[10px] text-slate-500 mt-1">{source.organisation} · {source.use_for}</div>
+                      <div className="text-[10px] text-amber-800 mt-1.5">Curator rule: {source.record_rule}</div>
+                    </a>
+                  )) : <p className="text-slate-500">Source directory is unavailable. Check that the local API is running, then refresh this page.</p>}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <a href={`${API_URL}/api/research-operations/templates/impact_catalogue`} download className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition inline-flex items-center gap-1.5"><Download className="h-4 w-4" /> Download CSV template</a>
+                <label className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition border border-slate-200 inline-flex items-center gap-1.5 cursor-pointer"><Upload className="h-4 w-4" /> Import reviewed evidence<input type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} /></label>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 5. Detail Drawer Modal */}
       {selectedRecord && (
