@@ -9,6 +9,54 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
+// Offline demonstration data. It is intentionally labelled in the interface so
+// it cannot be mistaken for live production-model telemetry.
+const PROTOTYPE_MODEL_HEALTH = {
+  model_status: 'HEALTHY',
+  retraining_readiness: {
+    readiness_score: 28,
+    recommendation: 'Continue monitoring',
+    reason: 'No material prototype drift trigger is active in the saved scenario.',
+  },
+  champion_model: {
+    model_version: 'RF-chronological-v1',
+    validation_metrics: { roc_auc: 0.89, pr_auc: 0.83, brier_score: 0.028 },
+  },
+  candidate_model: {
+    validation_metrics: { roc_auc: 0.87, pr_auc: 0.80, brier_score: 0.031 },
+  },
+  feature_drift: {
+    aggregate_psi: 0.07,
+    top_drifting_features: [
+      { feature: 'rainfall_7d_sum', training_median: 38.6, live_median: 42.0, pct_change_median: 8.8, psi: 0.08, ks_statistic: 0.12, ks_pvalue: 0.41, severity: 'LOW', status: 'NOMINAL' },
+      { feature: 'total_reservoir_level', training_median: 7760, live_median: 8120, pct_change_median: 4.6, psi: 0.06, ks_statistic: 0.10, ks_pvalue: 0.56, severity: 'LOW', status: 'NOMINAL' },
+      { feature: 'rainfall_daily', training_median: 6.9, live_median: 8.4, pct_change_median: 21.7, psi: 0.12, ks_statistic: 0.18, ks_pvalue: 0.18, severity: 'MODERATE', status: 'WATCH' },
+    ],
+  },
+  prediction_drift: { live_median_prob: 0.12, historical_median_prob: 0.11, probability_shift: 0.01, severity: 'LOW' },
+  uncertainty_trend: {
+    condition: 'STABLE',
+    epistemic_variance_mean: '0.04',
+    prediction_interval_width_mean: '0.17',
+    note: 'Saved prototype values show stable ensemble spread; this is not a real-time calibration claim.',
+  },
+  data_quality: { aggregate_score: 0.96, telemetry_state: 'PROTOTYPE', degraded_sources_count: 0 },
+  temporal_drift: {
+    pattern: 'Stable prototype baseline',
+    '24h_status': 'NOMINAL',
+    '7d_status': 'NOMINAL',
+    '30d_status': 'WATCH',
+    interpretation: 'Saved scenario only; establish monitored windows after backend deployment.',
+  },
+  concept_drift: {
+    status: 'VERIFIED LABELS REQUIRED',
+    scientific_rationale: 'A concept-drift conclusion requires new verified impact labels; the prototype does not infer it from unlabelled telemetry alone.',
+  },
+  nova_summary: {
+    briefing: 'The saved model-health scenario demonstrates the review workflow: data-quality gates, feature drift, uncertainty monitoring, and human approval before retraining.',
+  },
+};
+
 export default function ModelHealthDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +73,8 @@ export default function ModelHealthDashboard() {
       setData(result);
       setError(null);
     } catch (err) {
-      setError(err.message);
+      setData(PROTOTYPE_MODEL_HEALTH);
+      setError('Live backend is unavailable. Showing a clearly labelled saved prototype model-health scenario.');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -40,23 +89,23 @@ export default function ModelHealthDashboard() {
 
   if (loading && !data) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-slate-400 space-y-4">
-        <Cpu className="h-12 w-12 animate-pulse text-indigo-400" />
-        <p className="text-sm tracking-widest uppercase font-mono">Initializing Model Monitoring Engine...</p>
+      <div className="flex flex-col items-center justify-center h-96 text-slate-500 space-y-4">
+        <Cpu className="h-10 w-10 animate-spin text-indigo-600" />
+        <p className="text-xs uppercase font-bold tracking-wider text-slate-600">Initializing Model Monitoring Engine...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
-      <div className="bg-rose-950/40 border border-rose-800/60 text-rose-300 p-6 rounded-2xl flex items-start gap-4 backdrop-blur-md">
-        <AlertTriangle className="h-8 w-8 text-rose-400 shrink-0" />
+      <div className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-2xl flex items-start gap-4">
+        <AlertTriangle className="h-6 w-6 text-red-600 shrink-0" />
         <div>
-          <h3 className="font-bold text-lg mb-1">Model Telemetry Pipeline Error</h3>
-          <p className="text-sm text-rose-300/80">{error}</p>
+          <h3 className="font-bold text-sm mb-1">Model Telemetry Pipeline Error</h3>
+          <p className="text-xs text-red-700">{error}</p>
           <button 
             onClick={() => fetchModelHealth(selectedWindow)} 
-            className="mt-3 px-4 py-1.5 bg-rose-800 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg transition"
+            className="mt-3 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition"
           >
             Retry Connection
           </button>
@@ -82,48 +131,48 @@ export default function ModelHealthDashboard() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'HEALTHY':
-        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+        return 'bg-emerald-50 text-emerald-800 border-emerald-300';
       case 'WATCH':
-        return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+        return 'bg-amber-50 text-amber-800 border-amber-300';
       case 'DRIFT DETECTED':
-        return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+        return 'bg-rose-50 text-rose-800 border-rose-300';
       case 'RETRAINING RECOMMENDED':
-        return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+        return 'bg-purple-50 text-purple-800 border-purple-300';
       default:
-        return 'bg-slate-500/20 text-slate-300 border-slate-500/40';
+        return 'bg-slate-50 text-slate-800 border-slate-300';
     }
   };
 
   const getSeverityBadge = (sev) => {
     switch (sev) {
       case 'HIGH':
-        return <span className="px-2 py-0.5 text-xs font-bold rounded bg-rose-900/60 text-rose-300 border border-rose-700">HIGH</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold rounded bg-red-100 text-red-800 border border-red-200">HIGH</span>;
       case 'MODERATE':
-        return <span className="px-2 py-0.5 text-xs font-bold rounded bg-amber-900/60 text-amber-300 border border-amber-700">MODERATE</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold rounded bg-amber-100 text-amber-800 border border-amber-200">MODERATE</span>;
       default:
-        return <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700">LOW</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-100 text-emerald-800 border border-emerald-200">LOW</span>;
     }
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-12">
-      {/* 1. Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 border border-indigo-900/40 p-6 rounded-3xl shadow-xl backdrop-blur-xl">
+    <div className="space-y-6 animate-fadeIn pb-12 font-sans">
+      {/* 1. Clean Header Card */}
+      <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <span className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
                 <Cpu className="h-6 w-6" />
               </span>
               <div>
-                <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                   Model Health & Retraining Intelligence
-                  <span className={`text-xs px-3 py-1 rounded-full border font-mono tracking-wider ${getStatusColor(model_status)}`}>
-                    ● {model_status}
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full border uppercase font-bold tracking-wider ${getStatusColor(model_status)}`}>
+                    {model_status}
                   </span>
                 </h1>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
-                  Production Champion: <span className="text-indigo-300 font-semibold">{champion_model.model_version}</span> | Calibrated Random Forest (Platt Sigmoid)
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                  Production Champion: <span className="text-indigo-600 font-semibold">{champion_model.model_version}</span> | Calibrated Random Forest (Platt Sigmoid)
                 </p>
               </div>
             </div>
@@ -131,15 +180,15 @@ export default function ModelHealthDashboard() {
 
           <div className="flex items-center gap-3">
             {/* Window selector */}
-            <div className="flex bg-slate-950/70 border border-slate-800 rounded-xl p-1 text-xs font-mono">
+            <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs">
               {['24h', '7d', '30d'].map((w) => (
                 <button
                   key={w}
                   onClick={() => setSelectedWindow(w)}
                   className={`px-3 py-1.5 rounded-lg font-bold transition uppercase ${
                     selectedWindow === w
-                      ? 'bg-indigo-600 text-white shadow-lg'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {w} Horizon
@@ -150,19 +199,31 @@ export default function ModelHealthDashboard() {
             <button
               onClick={() => fetchModelHealth(selectedWindow)}
               disabled={isRefreshing}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700 disabled:opacity-50"
+              className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition border border-slate-200 disabled:opacity-50"
               title="Refresh Telemetry"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin text-indigo-600' : ''}`} />
             </button>
           </div>
         </div>
 
+        {error && (
+          <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 flex items-start gap-3">
+            <Info className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+            <div className="text-xs leading-relaxed">
+              <span className="font-bold">Prototype mode:</span> {error}
+              <button onClick={() => fetchModelHealth(selectedWindow)} className="ml-3 underline font-bold text-amber-900 hover:text-amber-700">
+                Retry connection
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Confidence Warning if Active */}
         {nova_summary.confidence_warning && (
-          <div className="mt-4 p-4 rounded-2xl bg-amber-950/50 border border-amber-800/80 text-amber-200 flex items-center gap-3">
-            <AlertOctagon className="h-5 w-5 text-amber-400 shrink-0" />
-            <span className="text-xs font-semibold tracking-wide">
+          <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-3">
+            <AlertOctagon className="h-5 w-5 text-amber-600 shrink-0" />
+            <span className="text-xs font-semibold">
               {nova_summary.confidence_warning}
             </span>
           </div>
@@ -172,16 +233,16 @@ export default function ModelHealthDashboard() {
       {/* 2. KPI Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Retraining Readiness Score */}
-        <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-lg relative overflow-hidden backdrop-blur-md">
+        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Retraining Readiness</span>
-            <Gauge className="h-4 w-4 text-indigo-400" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Retraining Readiness</span>
+            <Gauge className="h-4 w-4 text-indigo-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white">{retraining_readiness.readiness_score}</span>
-            <span className="text-xs font-mono text-slate-400">/ 100</span>
+            <span className="text-3xl font-black text-slate-900">{retraining_readiness.readiness_score}</span>
+            <span className="text-xs font-bold text-slate-500">/ 100</span>
           </div>
-          <div className="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
+          <div className="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
             <div
               className={`h-full transition-all duration-500 ${
                 retraining_readiness.readiness_score >= 75
@@ -193,49 +254,49 @@ export default function ModelHealthDashboard() {
               style={{ width: `${retraining_readiness.readiness_score}%` }}
             />
           </div>
-          <p className="text-[11px] font-mono text-indigo-300 mt-2 font-medium">
+          <p className="text-[11px] text-indigo-700 mt-2 font-semibold">
             Action: {retraining_readiness.recommendation}
           </p>
         </div>
 
         {/* Temporal Drift Classification */}
-        <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-lg backdrop-blur-md">
+        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Temporal Dynamics</span>
-            <Clock className="h-4 w-4 text-cyan-400" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Temporal Dynamics</span>
+            <Clock className="h-4 w-4 text-cyan-600" />
           </div>
-          <div className="text-base font-black text-white truncate">
+          <div className="text-base font-bold text-slate-800 truncate">
             {temporal_drift.pattern}
           </div>
-          <div className="flex items-center gap-2 mt-3 text-xs font-mono text-slate-400">
-            <span>24H: <b className="text-slate-200">{temporal_drift['24h_status']}</b></span>
+          <div className="flex items-center gap-2 mt-3 text-xs text-slate-500">
+            <span>24H: <b className="text-slate-700">{temporal_drift['24h_status']}</b></span>
             <span>•</span>
-            <span>7D: <b className="text-slate-200">{temporal_drift['7d_status']}</b></span>
+            <span>7D: <b className="text-slate-700">{temporal_drift['7d_status']}</b></span>
             <span>•</span>
-            <span>30D: <b className="text-slate-200">{temporal_drift['30d_status']}</b></span>
+            <span>30D: <b className="text-slate-700">{temporal_drift['30d_status']}</b></span>
           </div>
-          <p className="text-[10px] text-slate-500 mt-2 line-clamp-1">
+          <p className="text-[10px] text-slate-500 mt-2 line-clamp-1 font-medium">
             {temporal_drift.interpretation}
           </p>
         </div>
 
         {/* Prediction Drift */}
-        <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-lg backdrop-blur-md">
+        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Prediction Drift</span>
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Prediction Drift</span>
+            <TrendingUp className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white">
+            <span className="text-3xl font-black text-slate-900">
               {(prediction_drift.live_median_prob * 100).toFixed(1)}%
             </span>
-            <span className="text-xs font-mono text-slate-400">
+            <span className="text-xs font-medium text-slate-500">
               (Hist: {(prediction_drift.historical_median_prob * 100).toFixed(1)}%)
             </span>
           </div>
           <div className="flex items-center gap-2 mt-3">
-            <span className="text-xs text-slate-400 font-mono">Shift:</span>
-            <span className={`text-xs font-mono font-bold ${prediction_drift.probability_shift >= 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+            <span className="text-xs text-slate-500 font-medium">Shift:</span>
+            <span className={`text-xs font-bold ${prediction_drift.probability_shift >= 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
               {prediction_drift.probability_shift >= 0 ? '+' : ''}{(prediction_drift.probability_shift * 100).toFixed(2)}%
             </span>
             <span className="ml-auto">{getSeverityBadge(prediction_drift.severity)}</span>
@@ -243,47 +304,46 @@ export default function ModelHealthDashboard() {
         </div>
 
         {/* Sensor Data Quality Gating */}
-        <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-lg backdrop-blur-md">
+        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Telemetry Quality Gate</span>
-            <Shield className="h-4 w-4 text-purple-400" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Telemetry Quality Gate</span>
+            <Shield className="h-4 w-4 text-purple-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white">
+            <span className="text-3xl font-black text-slate-900">
               {(data_quality.aggregate_score * 100).toFixed(0)}%
             </span>
-            <span className="text-xs font-mono text-slate-400">SHS Score</span>
+            <span className="text-xs font-medium text-slate-500">SHS Score</span>
           </div>
           <div className="flex items-center gap-2 mt-3">
-            <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold ${
-              data_quality.telemetry_state === 'NOMINAL' ? 'bg-emerald-900/50 text-emerald-300' : 'bg-rose-900/50 text-rose-300'
+            <span className={`text-xs px-2 py-0.5 rounded font-bold ${
+              data_quality.telemetry_state === 'NOMINAL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
             }`}>
               {data_quality.telemetry_state}
             </span>
-            <span className="text-[11px] text-slate-400 font-mono ml-auto">
+            <span className="text-[11px] text-slate-500 font-medium ml-auto">
               Degraded: {data_quality.degraded_sources_count}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 3. NOVA AI Health Briefing */}
-      <div className="bg-slate-900/90 border border-indigo-900/50 p-6 rounded-3xl shadow-xl relative overflow-hidden backdrop-blur-xl">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* 3. Operational Model Briefing Card */}
+      <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shrink-0">
+          <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 shrink-0">
             <Sparkles className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              NOVA Model Health Briefing
-              <span className="text-xs font-mono text-indigo-400">● Real-Time Inference Alignment</span>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              Model Health Briefing
+              <span className="text-xs text-indigo-600 font-bold">• Real-Time Inference Alignment</span>
             </h3>
-            <p className="text-sm text-slate-300 leading-relaxed font-sans">
+            <p className="text-sm text-slate-600 leading-relaxed font-sans">
               {nova_summary.briefing}
             </p>
-            <div className="pt-2 border-t border-slate-800 text-xs font-mono text-slate-400 flex items-center gap-2">
-              <span className="text-indigo-400 font-semibold">Operational Rationale:</span>
+            <div className="pt-2 border-t border-slate-100 text-xs text-slate-500 flex items-center gap-2 font-medium">
+              <span className="text-indigo-600 font-bold">Operational Rationale:</span>
               <span>{retraining_readiness.reason}</span>
             </div>
           </div>
@@ -291,25 +351,25 @@ export default function ModelHealthDashboard() {
       </div>
 
       {/* 4. Top Drifting Features Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-indigo-400" />
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-indigo-600" />
               Top Drifting Environmental Features
             </h3>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">
               Statistical comparison of historical training distribution vs recent live observations ({selectedWindow} window)
             </p>
           </div>
-          <div className="text-xs font-mono text-slate-400">
-            Aggregate PSI: <b className="text-indigo-300">{feature_drift.aggregate_psi}</b>
+          <div className="text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+            Aggregate PSI: <b className="text-indigo-600">{feature_drift.aggregate_psi}</b>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300 font-mono">
-            <thead className="bg-slate-950/60 text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800">
+          <table className="w-full text-left text-sm text-slate-700">
+            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Feature Name</th>
                 <th className="py-3 px-4">Training Median</th>
@@ -321,31 +381,31 @@ export default function ModelHealthDashboard() {
                 <th className="py-3 px-4">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100 font-mono text-xs">
               {feature_drift.top_drifting_features.map((feat) => (
-                <tr key={feat.feature} className="hover:bg-slate-800/30 transition">
-                  <td className="py-3.5 px-4 font-semibold text-white">
+                <tr key={feat.feature} className="hover:bg-slate-50/70 transition">
+                  <td className="py-3.5 px-4 font-bold text-slate-800 font-sans">
                     {feat.feature.replace(/_/g, ' ')}
                   </td>
-                  <td className="py-3.5 px-4 text-slate-400">{feat.training_median}</td>
-                  <td className="py-3.5 px-4 text-slate-200">{feat.live_median}</td>
-                  <td className="py-3.5 px-4">
-                    <span className={feat.pct_change_median >= 0 ? 'text-amber-400' : 'text-cyan-400'}>
+                  <td className="py-3.5 px-4 text-slate-500">{feat.training_median}</td>
+                  <td className="py-3.5 px-4 text-slate-800 font-bold">{feat.live_median}</td>
+                  <td className="py-3.5 px-4 font-bold">
+                    <span className={feat.pct_change_median >= 0 ? 'text-amber-600' : 'text-blue-600'}>
                       {feat.pct_change_median >= 0 ? '+' : ''}{feat.pct_change_median}%
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 font-bold text-indigo-300">{feat.psi}</td>
-                  <td className="py-3.5 px-4 text-xs text-slate-400">
+                  <td className="py-3.5 px-4 font-bold text-indigo-700">{feat.psi}</td>
+                  <td className="py-3.5 px-4 text-xs text-slate-500">
                     {feat.ks_statistic} (p={feat.ks_pvalue})
                   </td>
                   <td className="py-3.5 px-4">{getSeverityBadge(feat.severity)}</td>
                   <td className="py-3.5 px-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       feat.status === 'DRIFT DETECTED'
-                        ? 'bg-rose-900/40 text-rose-300 border border-rose-800'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-200'
                         : feat.status === 'WATCH'
-                        ? 'bg-amber-900/40 text-amber-300 border border-amber-800'
-                        : 'bg-emerald-900/40 text-emerald-300 border border-emerald-800'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                     }`}>
                       {feat.status}
                     </span>
@@ -357,60 +417,60 @@ export default function ModelHealthDashboard() {
         </div>
       </div>
 
-      {/* 5. Two Column Grid: Uncertainty & Concept Drift / Safe Workflow */}
+      {/* 5. Uncertainty & Concept Drift Safeguard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Uncertainty Monitoring (Phase 11 Integration) */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Layers className="h-5 w-5 text-indigo-400" />
-              Uncertainty & Epistemic Dispersion (Phase 11)
+        {/* Uncertainty Monitoring */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Layers className="h-4 w-4 text-indigo-600" />
+              Uncertainty & Epistemic Dispersion
             </h3>
-            <span className="text-xs px-2.5 py-1 rounded-lg bg-indigo-900/40 text-indigo-300 font-mono border border-indigo-800">
+            <span className="text-xs px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
               {uncertainty_trend.condition}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 font-mono">
-              <span className="text-xs text-slate-400 block mb-1">Epistemic Variance</span>
-              <span className="text-xl font-black text-white">{uncertainty_trend.epistemic_variance_mean}</span>
-              <span className="text-[10px] text-slate-500 block mt-1">Tree ensemble variance</span>
+          <div className="grid grid-cols-2 gap-4 pt-1">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Epistemic Variance</span>
+              <span className="text-xl font-black text-slate-800">{uncertainty_trend.epistemic_variance_mean}</span>
+              <span className="text-[10px] text-slate-500 block mt-1 font-medium">Tree ensemble variance</span>
             </div>
 
-            <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 font-mono">
-              <span className="text-xs text-slate-400 block mb-1">Prediction Interval Width</span>
-              <span className="text-xl font-black text-white">{uncertainty_trend.prediction_interval_width_mean}</span>
-              <span className="text-[10px] text-slate-500 block mt-1">Split-conformal P90 - P10</span>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Prediction Interval Width</span>
+              <span className="text-xl font-black text-slate-800">{uncertainty_trend.prediction_interval_width_mean}</span>
+              <span className="text-[10px] text-slate-500 block mt-1 font-medium">Split-conformal P90 - P10</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800 text-xs text-slate-300 font-sans leading-relaxed">
-            <Info className="h-4 w-4 text-indigo-400 inline mr-1.5 -mt-0.5" />
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 leading-relaxed font-medium">
+            <Info className="h-4 w-4 text-indigo-600 inline mr-1.5 -mt-0.5" />
             {uncertainty_trend.note}
           </div>
         </div>
 
         {/* Concept Drift & Ground-Truth Safeguard */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <GitBranch className="h-5 w-5 text-cyan-400" />
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <GitBranch className="h-4 w-4 text-cyan-600" />
               Concept Drift & Verified Performance
             </h3>
-            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-bold uppercase">
               Scientific Guard
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-800/40 text-cyan-200">
+          <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5" />
+              <ShieldAlert className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider mb-1">
                   {concept_drift.status}
                 </h4>
-                <p className="text-xs text-cyan-300/80 leading-relaxed">
+                <p className="text-xs text-blue-800 leading-relaxed font-medium">
                   {concept_drift.scientific_rationale}
                 </p>
               </div>
@@ -418,39 +478,39 @@ export default function ModelHealthDashboard() {
           </div>
 
           {/* Champion vs Candidate Overview */}
-          <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-2 font-mono text-xs">
-            <div className="flex justify-between text-slate-400 pb-1 border-b border-slate-800">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2 text-xs font-mono">
+            <div className="flex justify-between text-slate-500 pb-1 border-b border-slate-200 font-sans font-bold">
               <span>Metric</span>
               <span>Champion (RF)</span>
               <span>Candidate (HGB)</span>
             </div>
-            <div className="flex justify-between text-slate-200">
-              <span>ROC-AUC</span>
-              <span className="font-bold text-emerald-400">{champion_model.validation_metrics.roc_auc}</span>
-              <span className="text-slate-400">{candidate_model.validation_metrics.roc_auc}</span>
+            <div className="flex justify-between text-slate-700">
+              <span className="font-sans font-semibold">ROC-AUC</span>
+              <span className="font-bold text-emerald-700">{champion_model.validation_metrics.roc_auc}</span>
+              <span className="text-slate-500">{candidate_model.validation_metrics.roc_auc}</span>
             </div>
-            <div className="flex justify-between text-slate-200">
-              <span>PR-AUC</span>
-              <span className="font-bold text-emerald-400">{champion_model.validation_metrics.pr_auc}</span>
-              <span className="text-slate-400">{candidate_model.validation_metrics.pr_auc}</span>
+            <div className="flex justify-between text-slate-700">
+              <span className="font-sans font-semibold">PR-AUC</span>
+              <span className="font-bold text-emerald-700">{champion_model.validation_metrics.pr_auc}</span>
+              <span className="text-slate-500">{candidate_model.validation_metrics.pr_auc}</span>
             </div>
-            <div className="flex justify-between text-slate-200">
-              <span>Brier Score</span>
-              <span className="font-bold text-emerald-400">{champion_model.validation_metrics.brier_score}</span>
-              <span className="text-slate-400">{candidate_model.validation_metrics.brier_score}</span>
+            <div className="flex justify-between text-slate-700">
+              <span className="font-sans font-semibold">Brier Score</span>
+              <span className="font-bold text-emerald-700">{champion_model.validation_metrics.brier_score}</span>
+              <span className="text-slate-500">{candidate_model.validation_metrics.brier_score}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* 6. Safe Retraining Workflow Architecture */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md">
-        <h3 className="text-base font-bold text-white flex items-center gap-2 mb-4">
-          <Shield className="h-5 w-5 text-emerald-400" />
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-4">
+          <Shield className="h-5 w-5 text-emerald-600" />
           Safe Model Retraining Architecture (Human-In-The-Loop)
         </h3>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 text-center font-mono text-xs">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 text-center text-xs">
           {[
             { step: '1', title: 'Live Telemetry', status: 'ACTIVE' },
             { step: '2', title: 'Data Quality Gate', status: 'GATED' },
@@ -461,16 +521,16 @@ export default function ModelHealthDashboard() {
             { step: '7', title: 'Champion Check', status: 'PROTECTED' },
             { step: '8', title: 'Manual Deploy', status: 'POLICY' }
           ].map((item, idx) => (
-            <div key={idx} className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 flex flex-col justify-between">
+            <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-between">
               <span className="text-[10px] text-slate-500 font-bold block mb-1">STEP {item.step}</span>
-              <span className="text-xs font-semibold text-slate-200 leading-tight mb-2">{item.title}</span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">
+              <span className="text-xs font-semibold text-slate-700 leading-tight mb-2">{item.title}</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-bold font-mono">
                 {item.status}
               </span>
             </div>
           ))}
         </div>
-        <p className="text-xs text-slate-400 mt-4 text-center">
+        <p className="text-xs text-slate-500 mt-4 text-center font-medium">
           Strict Policy: Production models are never automatically replaced. Candidate models must demonstrate superior PR-AUC on chronological holdouts before deployment.
         </p>
       </div>

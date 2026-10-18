@@ -915,8 +915,9 @@ def get_live_intelligence():
             
     # 6. EXPLAINABILITY (Simple top contributors logic)
     top_contributors = []
-    if hasattr(model, 'feature_importances_'):
-        imps = model.feature_importances_
+    underlying_rf = model_bundle.get("model") if isinstance(model_bundle, dict) else model_bundle
+    if underlying_rf is not None and hasattr(underlying_rf, 'feature_importances_'):
+        imps = underlying_rf.feature_importances_
         sorted_idx = np.argsort(imps)[::-1][:5]
         top_contributors = [{"feature": aligner.feature_cols[i], "importance": float(imps[i])} for i in sorted_idx]
     else:

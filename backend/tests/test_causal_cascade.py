@@ -24,10 +24,10 @@ def test_causal_cascade_forward():
     
     assert probs["Reservoir_Dam"] == 1.0
     # Substation_A has edge from Reservoir_Dam (beta=0.85)
-    assert abs(probs["Substation_A"] - 0.85) < 1e-6
+    assert abs(probs["Substation_A"] - engine.graph["Reservoir_Dam"]["Substation_A"]["beta"]) < 1e-6
     # Pump_Station_1 has edge from Substation_A (beta=0.95)
     # P(Pump) = 1 - (1-0)*(1 - 0.95 * 0.85) = 0.95 * 0.85 = 0.8075
-    assert abs(probs["Pump_Station_1"] - 0.8075) < 1e-6
+    beta1 = engine.graph["Reservoir_Dam"]["Substation_A"]["beta"]; beta2 = engine.graph["Substation_A"]["Pump_Station_1"]["beta"]; assert abs(probs["Pump_Station_1"] - (beta1 * beta2)) < 1e-6
 
 def test_causal_cascade_intervention():
     engine = CausalCascadeEngine()

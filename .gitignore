@@ -27,3 +27,16 @@ Thumbs.db
 *.docx
 *.txt
 
+# Local development runtime state
+backend/.matplotlib/
+backend/*-server.out.log
+backend/*-server.err.log
+
+# Local process output and transient artifacts
+backend/*.out.log
+backend/*.err.log
+frontend/*.out.log
+frontend/*.err.log
+**/run-check.*.log
+tmp/
+

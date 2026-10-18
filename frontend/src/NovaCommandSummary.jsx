@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Brain, Activity, Clock, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus, HelpCircle } from 'lucide-react';
+import { Brain, Activity, AlertTriangle, CheckCircle2, HelpCircle, ClipboardCheck, RefreshCw, ShieldCheck, UserCheck, Send } from 'lucide-react';
 
 export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD' }) {
   const [isGenerated, setIsGenerated] = useState(false);
@@ -10,6 +10,9 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
   const [showAskNova, setShowAskNova] = useState(false);
   const [novaQuestion, setNovaQuestion] = useState(null);
   const [novaAnswer, setNovaAnswer] = useState(null);
+  const [novaMode, setNovaMode] = useState('');
+  const [customQuestion, setCustomQuestion] = useState('');
+  const [copilotLoading, setCopilotLoading] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -118,7 +121,9 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
     data_trust,
     confidence,
     recommended_action,
-    causal_chain
+    causal_chain,
+    decision_brief,
+    method_note
   } = summary;
 
   const getRiskColor = (level) => {
@@ -132,43 +137,47 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
   };
 
   const predefinedQuestions = [
-    "What is the biggest current threat?",
-    "Why is the risk increasing?",
-    "What changed recently?",
-    "Which asset needs attention?",
-    "How confident is the prediction?",
-    "What should emergency teams prioritize?",
-    "What happens in the next hour?",
-    "Are the sensors trustworthy?"
+    "What should the team do now?",
+    "Why is this the current priority?",
+    "What would trigger escalation?",
+    "How reliable is this briefing?",
   ];
 
-  const handleAskNova = (q) => {
+  const handleAskNova = async (q) => {
     setNovaQuestion(q);
-    // Simple mapped answers based on summary payload for operational conciseness
-    if (q.includes("threat")) setNovaAnswer(`The priority threat is ${priority_threat.type} (Level: ${priority_threat.level}).`);
-    else if (q.includes("increasing")) setNovaAnswer(why_now.join(' '));
-    else if (q.includes("changed")) setNovaAnswer(what_changed.join(' '));
-    else if (q.includes("asset")) setNovaAnswer(`Prioritize ${highest_priority_asset['Asset Name']} (${highest_priority_asset['Risk Level']} Risk).`);
-    else if (q.includes("confident")) setNovaAnswer(`Confidence is ${confidence.level} because ${confidence.explanation}`);
-    else if (q.includes("teams prioritize")) setNovaAnswer(recommended_action);
-    else if (q.includes("next hour")) setNovaAnswer(`Next 60 min outlook: ${next_60_minutes.map(n => `${n.horizon}: ${n.risk}`).join(' | ')}`);
-    else if (q.includes("sensors")) setNovaAnswer(`Data Trust is ${data_trust.status} (${(data_trust.score*100).toFixed(0)}%). ${data_trust.explanation}`);
-    else setNovaAnswer(current_situation);
+    setCopilotLoading(true);
+    setNovaAnswer(null);
+    try {
+      const response = await fetch(`${API_URL}/api/ai/copilot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, hazard: selectedHazard || 'FLOOD' })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'NOVA could not answer this question.');
+      setNovaAnswer(data.answer);
+      setNovaMode(data.mode);
+    } catch (err) {
+      setNovaAnswer(`${decision_brief?.evidence_boundary || method_note} Please refresh the briefing and try again.`);
+      setNovaMode('LOCAL_INTERFACE_FALLBACK');
+    } finally {
+      setCopilotLoading(false);
+    }
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-xl relative overflow-hidden select-none">
+    <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 mb-6 shadow-lg relative overflow-hidden">
       {/* Background Decorator */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none"></div>
 
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-lg font-black tracking-widest text-slate-900 flex items-center gap-2">
-            <Brain className="h-5 w-5 text-indigo-400" /> NOVA AI COMMAND SUMMARY
-            <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded text-[10px] ml-2 font-bold animate-pulse">● LIVE AI</span>
+          <h2 className="text-lg font-black tracking-wide text-slate-900 flex items-center gap-2">
+            <Brain className="h-5 w-5 text-indigo-600" /> NOVA OPERATIONS BRIEF
+            <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] ml-2 font-bold">LIVE DECISION SUPPORT</span>
           </h2>
-          <p className="text-slate-500 text-xs mt-1">Executive intelligence layer — {new Date(summary.timestamp).toLocaleTimeString()}</p>
+          <p className="text-slate-500 text-xs mt-1">A transparent summary of current telemetry and prototype model outputs — {new Date(summary.timestamp).toLocaleTimeString()}</p>
         </div>
         
         <div className="flex gap-4">
@@ -188,27 +197,27 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 relative z-10">
         
         {/* Col 1: Current State & Why */}
         <div className="space-y-4">
           <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-lg">
-            <h3 className="text-[10px] text-rose-400 font-bold tracking-widest uppercase mb-1">TOP PRIORITY THREAT</h3>
+            <h3 className="text-[10px] text-rose-600 font-bold tracking-widest uppercase mb-1">Current priority</h3>
             <div className="text-xl font-black text-slate-900 mb-2">{priority_threat.type.replace('_', ' ')}</div>
             <div className="flex justify-between items-center text-xs">
               <span className="text-slate-500">Level: <span className={`font-bold ${getRiskColor(priority_threat.level)}`}>{priority_threat.level}</span></span>
               <span className="text-slate-500">Score: <span className="font-bold text-slate-900">{priority_threat.score}</span></span>
             </div>
             <div className="mt-3 pt-3 border-t border-slate-200/50">
-              <p className="text-xs text-amber-200/90 font-semibold leading-relaxed">
-                <span className="text-slate-500 uppercase text-[9px] block mb-0.5">Action</span>
-                {priority_threat.recommended_action}
+              <p className="text-xs text-slate-700 font-semibold leading-relaxed">
+                <span className="text-slate-500 uppercase text-[9px] block mb-0.5">Current assessment</span>
+                {current_situation}
               </p>
             </div>
           </div>
 
           <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-lg">
-            <h3 className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mb-2">WHY NOW?</h3>
+            <h3 className="text-[10px] text-indigo-600 font-bold tracking-widest uppercase mb-2">Evidence used</h3>
             <ul className="space-y-1">
               {why_now.map((reason, i) => (
                 <li key={i} className="text-xs text-slate-700 flex items-start gap-1.5">
@@ -219,27 +228,28 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
           </div>
         </div>
 
-        {/* Col 2: Changes & Next 60 Mins */}
+        {/* Col 2: action and review */}
         <div className="space-y-4">
-          <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-lg">
-            <h3 className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mb-2">WHAT CHANGED?</h3>
-            <ul className="space-y-1">
-              {what_changed.map((change, i) => (
-                <li key={i} className="text-xs text-slate-700 flex items-start gap-1.5">
-                  <span className="text-slate-500 mt-0.5">→</span> {change}
-                </li>
-              ))}
-            </ul>
+          <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <h3 className="text-[10px] text-indigo-700 font-bold tracking-widest uppercase">Recommended next step</h3>
+              <span className="text-[10px] font-bold rounded-full px-2 py-1 bg-white text-indigo-700 border border-indigo-100">{decision_brief?.operating_mode || 'NORMAL'}</span>
+            </div>
+            <p className="text-sm text-slate-800 font-semibold leading-relaxed">{decision_brief?.action || recommended_action}</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+              <div><span className="block text-slate-500 text-[10px] uppercase tracking-wide">Owner</span><span className="font-semibold text-slate-800">{decision_brief?.owner || 'Duty analyst'}</span></div>
+              <div><span className="block text-slate-500 text-[10px] uppercase tracking-wide">Review</span><span className="font-semibold text-slate-800">in {decision_brief?.review_in_minutes || 60} minutes</span></div>
+            </div>
           </div>
 
           <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-lg">
-            <h3 className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mb-2">NEXT 60 MINUTES</h3>
+            <h3 className="text-[10px] text-indigo-600 font-bold tracking-widest uppercase mb-2">Review plan</h3>
             <div className="space-y-2">
               {next_60_minutes.map((fc, i) => (
                 <div key={i} className="flex justify-between items-center text-xs">
                   <span className="font-bold text-slate-500 w-16">{fc.horizon}</span>
-                  <span className={`font-bold ${getRiskColor(fc.risk)}`}>{fc.risk}</span>
-                  <span className="text-slate-500 w-16 text-right">{fc.trend}</span>
+                  <span className={`font-bold ${fc.risk === 'REVIEW' ? 'text-indigo-700' : getRiskColor(fc.risk)}`}>{fc.risk}</span>
+                  <span className="text-slate-500 w-32 text-right">{fc.trend}</span>
                 </div>
               ))}
             </div>
@@ -249,7 +259,7 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
         {/* Col 3: Causal Chain & Asset Priority */}
         <div className="space-y-4">
           <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-lg">
-            <h3 className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase mb-2">HIGHEST PRIORITY ASSET</h3>
+            <h3 className="text-[10px] text-emerald-700 font-bold tracking-widest uppercase mb-2">Screening-priority asset</h3>
             <div className="text-sm font-bold text-slate-900 truncate" title={highest_priority_asset['Asset Name']}>
               {highest_priority_asset['Asset Name'] || 'No assets critically exposed'}
             </div>
@@ -258,12 +268,13 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
               <span className="mx-2">•</span> 
               <span className={getRiskColor(highest_priority_asset['Risk Level'])}>{highest_priority_asset['Risk Level'] || 'SAFE'}</span>
             </div>
+            <p className="mt-2 text-[10px] text-slate-500">Prioritisation is model-derived and needs field verification before deployment.</p>
           </div>
 
           <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-lg flex-1">
             <div className="flex justify-between items-center mb-2">
-               <h3 className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">CAUSAL CHAIN</h3>
-               <span className="text-[8px] bg-slate-700 px-1.5 rounded text-slate-700">AI GENERATED</span>
+               <h3 className="text-[10px] text-indigo-600 font-bold tracking-widest uppercase">How this result was derived</h3>
+               <span className="text-[8px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-600">TRACEABLE</span>
             </div>
             <div className="text-xs text-slate-700 space-y-1 relative pl-3 border-l border-slate-200 ml-1">
               {causal_chain.map((link, i) => (
@@ -278,16 +289,21 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
 
       </div>
 
+      <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 flex gap-3 relative z-10">
+        <ShieldCheck className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+        <div><p className="text-xs font-bold text-amber-900">Decision boundary</p><p className="text-xs text-amber-800 mt-0.5">{decision_brief?.evidence_boundary || method_note}</p></div>
+      </div>
+
       {/* Ask NOVA Button */}
       <div className="mt-6 border-t border-slate-200/50 pt-4 flex justify-between items-center relative z-10">
         <div className="text-[10px] text-slate-500 flex gap-4 font-semibold">
            <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> OBSERVED: Sensors</span>
            <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span> MODEL PREDICTED: Engine</span>
-           <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span> AI GENERATED: Nova</span>
+           <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span> SYNTHESISED: Nova</span>
         </div>
         <button 
           onClick={() => setShowAskNova(!showAskNova)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-slate-900 text-xs font-bold py-2 px-4 rounded transition shadow-lg"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded transition shadow-lg"
         >
           <HelpCircle className="h-4 w-4" /> {showAskNova ? 'CLOSE NOVA' : 'ASK NOVA'}
         </button>
@@ -298,7 +314,7 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
         <div className="mt-4 bg-slate-50 rounded-lg border border-indigo-500/30 p-4 animate-in fade-in slide-in-from-top-2 relative z-10">
           <div className="flex gap-4">
             <div className="w-1/2 border-r border-slate-200 pr-4">
-              <h4 className="text-[10px] text-indigo-300 font-bold tracking-widest uppercase mb-3">Quick Queries</h4>
+              <h4 className="text-[10px] text-indigo-700 font-bold tracking-widest uppercase mb-3">Useful questions</h4>
               <div className="grid grid-cols-1 gap-2">
                 {predefinedQuestions.map((q, i) => (
                   <button 
@@ -312,13 +328,14 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
               </div>
             </div>
             <div className="w-1/2 pl-2">
-              <h4 className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase mb-3">NOVA RESPONSE</h4>
+              <h4 className="text-[10px] text-emerald-700 font-bold tracking-widest uppercase mb-3">NOVA RESPONSE</h4>
               {novaQuestion ? (
                 <div className="space-y-3">
                   <div className="text-xs text-slate-500 italic">"{novaQuestion}"</div>
                   <div className="text-sm text-slate-900 leading-relaxed border-l-2 border-indigo-500 pl-3">
-                    {novaAnswer}
+                    {copilotLoading ? 'Reviewing the current evidence…' : novaAnswer}
                   </div>
+                  {!copilotLoading && novaMode && <p className="text-[10px] font-bold text-slate-500 uppercase">Mode: {novaMode.replaceAll('_', ' ')}</p>}
                 </div>
               ) : (
                 <div className="text-xs text-slate-500 h-full flex items-center justify-center italic">
@@ -327,6 +344,12 @@ export default function NovaCommandSummary({ apiOnline, selectedHazard = 'FLOOD'
               )}
             </div>
           </div>
+          <form onSubmit={(event) => { event.preventDefault(); if (customQuestion.trim()) handleAskNova(customQuestion.trim()); }} className="mt-4 border-t border-slate-200 pt-3 flex gap-2">
+            <label className="sr-only" htmlFor="nova-custom-question">Ask NOVA a question</label>
+            <input id="nova-custom-question" value={customQuestion} onChange={(event) => setCustomQuestion(event.target.value)} maxLength={1000} className="min-w-0 flex-1 rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200" placeholder="Ask about the current evidence, action, or uncertainty…" />
+            <button type="submit" disabled={!customQuestion.trim() || copilotLoading} className="inline-flex items-center gap-1 rounded bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"><Send className="h-3.5 w-3.5"/>Ask</button>
+          </form>
+          <p className="mt-2 text-[10px] text-slate-500">NOVA uses an evidence-grounded local fallback until an optional backend-only AI key is configured.</p>
         </div>
       )}
     </div>

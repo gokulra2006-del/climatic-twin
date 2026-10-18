@@ -341,6 +341,30 @@ class DecisionSupportEngine:
         decision_level = self.classify_decision_level(dss, self.current_decision_level)
         dq_gate = self.evaluate_data_quality_gate(aggregate_shs, source_health_states, num_anomalous)
 
+        # A high-quality, high-confidence data stream must not itself cause an
+        # escalation.  Under a clearly low-hazard, low-compound-risk state,
+        # retain NORMAL even when the quality/confidence components make the
+        # aggregate prototype DSS numerically large.  This keeps the policy
+        # interpretable and prevents "good telemetry" from becoming a risk
+        # driver.
+        if (
+            flood_probability < 0.05
+            and compound_risk_score < 0.20
+            and max_asset_risk_index <= 0.30
+            and consecutive_elevated_cycles == 0
+            and trend_direction != "RISING"
+            and dq_gate["gate_state"] == "PASS"
+        ):
+            decision_level = "NORMAL"
+
+        # A very high calibrated hazard probability is itself an escalation
+        # trigger.  It must not be diluted by otherwise healthy telemetry or
+        # low default asset-risk values in the aggregate score.
+        if flood_probability >= 0.85 and dq_gate["gate_state"] != "BLOCKED":
+            decision_level = "EMERGENCY" if (
+                compound_risk_score >= 0.70 or max_asset_risk_index >= 0.75
+            ) else "ALERT"
+
         prob_level = "HIGH" if flood_probability >= 0.50 else "MODERATE" if flood_probability >= 0.20 else "LOW"
         uncertainty_mod = self.evaluate_uncertainty_modifier(prob_level, uncertainty_level)
 
@@ -382,6 +406,22 @@ class DecisionSupportEngine:
         self.current_decision_level = decision_level
         self.current_dss = dss
 
+        # Transparent prototype utility values.  These are shown for method
+        # inspection only and are not monetary estimates or authority-approved
+        # operational costs.
+        action_costs = {"NORMAL": 0.0, "MONITOR": 5.0, "PREPARE": 50.0, "ALERT": 500.0, "EMERGENCY": 2000.0}
+        missed_event_cost = 5000.0
+        residual_risk = {"NORMAL": 1.00, "MONITOR": 0.90, "PREPARE": 0.65, "ALERT": 0.35, "EMERGENCY": 0.15}
+        expected_costs = {
+            level: round(cost + flood_probability * missed_event_cost * residual_risk[level], 2)
+            for level, cost in action_costs.items()
+        }
+        rationale = (
+            f"{decision_level} selected from prototype hazard, asset, compound-risk, "
+            f"uncertainty, telemetry-quality, and persistence inputs. Expected costs are "
+            "illustrative research units and require authority calibration before operational use."
+        )
+
         decision_record = {
             "decision_level": decision_level,
             "decision_score": round(dss, 4),
@@ -397,6 +437,8 @@ class DecisionSupportEngine:
                 "persistence": round(p_score, 4)
             },
             "component_weights": deepcopy(DSS_WEIGHTS),
+            "expected_costs": expected_costs,
+            "rationale": rationale,
             "context": {
                 "flood_probability": round(flood_probability, 4),
                 "forecast_horizon": forecast_horizon,

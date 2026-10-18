@@ -70,6 +70,45 @@ def read_sensors(
     }
 
 
+@router.get("/live-network")
+def get_live_sensor_network():
+    """Returns live multi-station sensor data across 6 Chennai weather stations, synced from Open-Meteo."""
+    try:
+        from app.core.satellite_ingestion import satellite_engine
+        sat_data = satellite_engine.get_latest_satellite_telemetry()
+        
+        sensor_network = sat_data.get("sensor_network", {})
+        
+        if not sensor_network:
+            return {"status": "OFFLINE", "stations": [], "total": 0}
+        
+        stations = list(sensor_network.values())
+        
+        # Aggregate summary
+        temps = [s["readings"]["temperature_c"] for s in stations]
+        rains = [s["readings"]["precipitation_mm"] for s in stations]
+        winds = [s["readings"]["wind_speed_kmh"] for s in stations]
+        
+        return {
+            "status": "LIVE",
+            "total_stations": len(stations),
+            "stations": stations,
+            "aggregate": {
+                "avg_temperature_c": round(sum(temps) / len(temps), 1),
+                "max_temperature_c": round(max(temps), 1),
+                "min_temperature_c": round(min(temps), 1),
+                "avg_rainfall_mm": round(sum(rains) / len(rains), 1),
+                "max_rainfall_mm": round(max(rains), 1),
+                "avg_wind_kmh": round(sum(winds) / len(winds), 1),
+                "max_wind_kmh": round(max(winds), 1),
+                "all_stations_online": all(s["status"] == "ONLINE" for s in stations)
+            },
+            "source": "Open-Meteo Live API (6 Virtual Weather Stations)",
+            "data_source_url": "https://api.open-meteo.com/v1/forecast?latitude=13.0827&longitude=80.2707"
+        }
+    except Exception as e:
+        return {"status": "ERROR", "detail": str(e), "stations": [], "total": 0}
+
 @router.get("/{sensor_id}", response_model=SensorSchema)
 def read_sensor(
     sensor_id: int, 
@@ -133,3 +172,7 @@ def read_sensor_readings_for_sensor(
         "page_size": limit,
         "total_pages": (total + limit - 1) // limit if limit > 0 else 0
     }
+
+
+
+

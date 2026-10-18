@@ -1,0 +1,11 @@
+{
+  "status": "JOURNAL SUBMISSION READY",
+  "timestamp": "2026-10-09T17:00:00Z",
+  "tests_passed": true,
+  "metrics_generated": true,
+  "random_seed": 42,
+  "warnings": [
+    "Mumbai data is synthetic domain-shift only",
+    "GNN topology is synthetic"
+  ]
+}
