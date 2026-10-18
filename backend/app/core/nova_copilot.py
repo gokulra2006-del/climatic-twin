@@ -15,12 +15,22 @@ class NovaCopilot:
     endpoint = "https://openrouter.ai/api/v1/chat/completions"
 
     def provider_status(self) -> Dict[str, Any]:
-        configured = bool(os.getenv("OPENROUTER_API_KEY", "").strip())
+        key_configured = bool(os.getenv("OPENROUTER_API_KEY", "").strip())
+        # External model calls are opt-in.  This prevents an accidentally set
+        # key from sending operational telemetry outside the local deployment.
+        configured = key_configured and os.getenv("NOVA_EXTERNAL_AI_ENABLED", "false").lower() in {"1", "true", "yes"}
         return {
             "configured": configured,
             "provider": "OpenRouter" if configured else "Evidence-grounded local fallback",
             "model": os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini") if configured else None,
             "key_location": "Backend environment only; never expose an API key in the browser.",
+            "external_ai_opt_in": configured,
+            "external_ai_ready": key_configured,
+            "enablement_note": (
+                "External AI is enabled by the backend operator."
+                if configured else
+                "Local evidence mode is active. To enable an external provider, set NOVA_EXTERNAL_AI_ENABLED=true on the backend after approving data sharing."
+            ),
             "boundary": "NOVA summarises supplied telemetry and model outputs. It must not issue public warnings, infer unseen field conditions, or replace an authorised human decision.",
         }
 
