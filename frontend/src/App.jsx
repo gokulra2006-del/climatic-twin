@@ -1,4 +1,4 @@
-import {AlertTriangle, Shield, Thermometer, Wind, Droplets, CloudRain, MapPin, RefreshCw, Layers, Database, Sparkles, CheckCircle2, Clock, Gauge, Radio, LogOut, User, Activity, FileText, Settings, Users, PlayCircle, Sliders, HardDrive, Cpu, ChevronDown, ChevronRight, Zap, ShieldAlert, Terminal, Sun, Flame, ClipboardCheck, Beaker, ClipboardPenLine, PanelLeftClose, PanelLeftOpen} from 'lucide-react'
+import {AlertTriangle, Shield, Thermometer, Wind, Droplets, CloudRain, MapPin, RefreshCw, Layers, Database, Sparkles, CheckCircle2, Clock, Gauge, Radio, LogOut, User, Activity, FileText, Settings, Users, PlayCircle, Sliders, HardDrive, Cpu, ChevronDown, ChevronRight, Zap, ShieldAlert, Terminal, Sun, Flame, ClipboardCheck, Beaker, ClipboardPenLine, PanelLeftClose, PanelLeftOpen, BrainCircuit, Bot} from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, Rectangle } from 'react-leaflet'
 import { 
@@ -20,6 +20,7 @@ import EvidenceReviewDashboard from './components/EvidenceReviewDashboard'
 import ResearchReadinessPanel from './components/ResearchReadinessPanel'
 import SyntheticBenchmarkPanel from './components/SyntheticBenchmarkPanel'
 import ResearchOperationsHub from './components/ResearchOperationsHub'
+import AIDecisionSuite from './components/AIDecisionSuite'
 
 
 // Fix for default Leaflet marker icon issues in React
@@ -205,6 +206,7 @@ const Sidebar = ({ userRole, currentView, setCurrentView, selectedHazard, setSel
       requiredRoles: ["viewer", "operator", "admin"],
       items: [
         { id: "DASHBOARD", label: "Live Dashboard", icon: <Layers className="h-3.5 w-3.5" />, action: () => { setSelectedHazard("OVERVIEW"); setCurrentView('DASHBOARD'); }, isActive: currentView === 'DASHBOARD' && selectedHazard === 'OVERVIEW' },
+        { id: "AI_SUITE", label: "🤖 AI Copilot & Operations Suite", icon: <BrainCircuit className="h-3.5 w-3.5 text-indigo-400" />, action: () => setCurrentView('AI_SUITE'), isActive: currentView === 'AI_SUITE' },
         { id: "LIVE_FLOOD_INTEL", label: "Phase Next Live Intel", icon: <Activity className="h-3.5 w-3.5 text-emerald-400" />, action: () => setCurrentView('LIVE_FLOOD_INTEL'), isActive: currentView === 'LIVE_FLOOD_INTEL' },
         { id: "IMPACT_CATALOGUE", label: "Impact Catalogue", icon: <Database className="h-3.5 w-3.5 text-indigo-500" />, action: () => setCurrentView('IMPACT_CATALOGUE'), isActive: currentView === 'IMPACT_CATALOGUE' },
         { id: "EVIDENCE_REVIEW", label: "Evidence Review", icon: <Shield className="h-3.5 w-3.5 text-emerald-600" />, action: () => setCurrentView('EVIDENCE_REVIEW'), isActive: currentView === 'EVIDENCE_REVIEW' },
@@ -946,6 +948,7 @@ function App() {
               <Shield className="h-5 w-5 text-indigo-500" />
               {currentView === 'DASHBOARD' 
                 ? `${selectedHazard === 'OVERVIEW' ? 'Live System' : selectedHazard.replace('_', ' ').toLowerCase()} Digital Twin`
+                : currentView === 'AI_SUITE' ? 'NOVA AI Copilot & Operational Decision Suite'
                 : currentView === 'TIME_MACHINE' ? 'Time Machine & Historical Replay'
                 : currentView === 'LIVE_FLOOD_INTEL' ? 'Real-Time Flood Intelligence'
                 : currentView === 'RESEARCH_READINESS' ? 'Research Evidence Readiness'
@@ -977,6 +980,7 @@ function App() {
         {/* Scrollable Main Area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-20 relative">
           
+        {currentView === 'AI_SUITE' && <AIDecisionSuite selectedHazard={selectedHazard} />}
         {currentView === 'LIVE_FLOOD_INTEL' && <LiveFloodIntelligence />}
           
           {currentView === 'IMPACT_CATALOGUE' && <ImpactCatalogue onNavigateToReview={() => setCurrentView('EVIDENCE_REVIEW')} />}

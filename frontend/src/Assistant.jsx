@@ -86,13 +86,25 @@ const Assistant = () => {
 
   return (
     <>
-      {/* Floating Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-4 shadow-xl z-50 transition-transform transform hover:scale-105 flex items-center justify-center"
-      >
-        {isOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
-      </button>
+      {/* Floating Button with Badge */}
+      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 group">
+        {!isOpen && (
+          <div 
+            onClick={() => setIsOpen(true)}
+            className="cursor-pointer bg-slate-900 text-indigo-300 text-xs font-bold px-3.5 py-1.5 rounded-full shadow-xl border border-indigo-500/50 flex items-center gap-2 hover:bg-indigo-950 transition"
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>Ask NOVA AI Copilot</span>
+          </div>
+        )}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          title="Open NOVA AI Assistant"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-4 shadow-2xl transition-transform transform hover:scale-105 flex items-center justify-center border-2 border-indigo-400/50"
+        >
+          {isOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
+        </button>
+      </div>
 
       {/* Chat Panel */}
       {isOpen && (
