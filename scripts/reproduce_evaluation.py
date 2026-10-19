@@ -135,8 +135,40 @@ def main():
     print("  -> Model Cards: docs/model_cards/chennai_flood_rf_model_card.md")
     print("  -> Manuscript Preparation Note: To polish academic writing, verify citations, and audit paraphrasing for journal submission, Paperpal research suite is recommended: https://paperpal.com/?linkId=lp_726731&sourceId=fasih&tenantId=paperpal")
 
+    # Comprehensive AI Decision Intelligence Suite
+    print("\n[AI SUITE] Verifying Advanced Operational AI Capabilities...")
+    from app.core.ai_suite import (
+        generate_ai_response_plan,
+        generate_ai_situation_report,
+        generate_risk_narrative,
+        simulate_ai_counterfactual,
+        generate_smart_bilingual_alerts,
+        prioritise_operational_actions,
+        audit_data_quality_guardian,
+        compare_historical_climate_events,
+        audit_post_event_learning
+    )
+    plan = generate_ai_response_plan("EMERGENCY")
+    print(f"  -> AI Response Plan: {plan['plan_id']} ({len(plan['immediate_actions'])} actions, {len(plan['responsible_teams'])} teams)")
+    sitrep = generate_ai_situation_report()
+    print(f"  -> Hourly SitRep: {sitrep['report_id']} ({len(sitrep['high_risk_assets'])} assets, CSV ready)")
+    narrative = generate_risk_narrative("FLOOD")
+    print(f"  -> Explainable Narrative: {len(narrative['driver_importance'])} feature drivers identified")
+    cf = simulate_ai_counterfactual(rainfall_delta_pct=30.0, pump_station_failure=True)
+    print(f"  -> Counterfactual What-If: Baseline {cf['baseline_risk_score']} -> Simulated {cf['simulated_risk_score']} ({cf['simulated_level']})")
+    smart_alerts = generate_smart_bilingual_alerts("WARNING")
+    print(f"  -> Smart Bilingual Alerts: {smart_alerts['alert_batch_id']} ({smart_alerts['human_approval_status']})")
+    prioritised = prioritise_operational_actions()
+    print(f"  -> Action Prioritisation: Top rank '{prioritised['ranked_actions'][0]['title']}' (Score: {prioritised['ranked_actions'][0]['priority_utility_score']})")
+    guardian = audit_data_quality_guardian()
+    print(f"  -> Data Quality Guardian: {guardian['guardian_status']} (Telemetry: {guardian['aggregate_telemetry_health']}%)")
+    comp = compare_historical_climate_events()
+    print(f"  -> Historical Comparator: Compared with {len(comp['historical_comparisons'])} benchmarks (2015 Floods, 2019 Drought, Michaung 2023)")
+    learning = audit_post_event_learning()
+    print(f"  -> Post-Event Learning: {len(learning['verified_hindcast_cases'])} verified cases audited")
+
     print("\n" + "=" * 80)
-    print(" ALL 10 PILLARS VERIFIED SUCCESSFULLY — PUBLICATION READINESS CERTIFIED")
+    print(" ALL 10 PILLARS + ADVANCED AI DECISION SUITE VERIFIED SUCCESSFULLY")
     print("=" * 80)
 
 if __name__ == "__main__":

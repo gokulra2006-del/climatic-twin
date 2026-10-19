@@ -71,3 +71,75 @@ def test_ai_assistant_grounded_queries():
     # 2. What changed query
     res_change = generate_assistant_response(None, "What changed in the last 24 hours?", "research")
     assert "rainfall" in res_change["answer"].lower() or "precipitation" in res_change["answer"].lower()
+
+    # 3. Which wards are exposed query
+    res_wards = generate_assistant_response(None, "Which wards are most exposed?", "citizen")
+    assert "Velachery" in res_wards["answer"] or "Vyasarpadi" in res_wards["answer"]
+
+
+def test_ai_suite_comprehensive_features():
+    from app.core.ai_suite import (
+        generate_ai_response_plan,
+        generate_ai_situation_report,
+        generate_risk_narrative,
+        simulate_ai_counterfactual,
+        generate_smart_bilingual_alerts,
+        prioritise_operational_actions,
+        audit_data_quality_guardian,
+        compare_historical_climate_events,
+        audit_post_event_learning
+    )
+
+    # 1. AI Response Plan Generator
+    plan = generate_ai_response_plan("EMERGENCY", "FLOOD")
+    assert plan["threat_level"] == "EMERGENCY / CRITICAL"
+    assert len(plan["immediate_actions"]) >= 3
+    assert len(plan["responsible_teams"]) >= 3
+    assert "bilingual_advisory" in plan
+
+    # 3. AI Situation Report Generator
+    sitrep = generate_ai_situation_report()
+    assert "SITREP-CHN-" in sitrep["report_id"]
+    assert len(sitrep["high_risk_assets"]) >= 2
+    assert "download_csv_content" in sitrep
+    assert "Section,Metric,Value" in sitrep["download_csv_content"]
+
+    # 4. Explainable Risk Narratives
+    narrative = generate_risk_narrative("FLOOD")
+    assert len(narrative["driver_importance"]) >= 3
+    assert "rainfall" in narrative["narrative"].lower()
+
+    # 5. Counterfactual What-If Simulator
+    cf = simulate_ai_counterfactual(rainfall_delta_pct=30.0, pump_station_failure=True)
+    assert cf["simulated_risk_score"] > cf["baseline_risk_score"]
+    assert len(cf["assumptions"]) >= 2
+
+    # 6. Smart Bilingual Alert Writer
+    alerts = generate_smart_bilingual_alerts("WARNING", "Velachery Micro-Basin")
+    assert alerts["human_approval_status"] == "PENDING_OFFICIAL_SIGN_OFF"
+    assert "public_advisory" in alerts["alerts"]
+    assert "title_ta" in alerts["alerts"]["public_advisory"]
+
+    # 7. Action Prioritisation Engine
+    prioritised = prioritise_operational_actions()
+    assert prioritised["total_evaluated_actions"] >= 4
+    assert prioritised["ranked_actions"][0]["priority_rank"] == 1
+
+    # 8. AI Data Quality Guardian
+    guardian = audit_data_quality_guardian()
+    assert "guardian_status" in guardian
+    assert "aggregate_telemetry_health" in guardian
+
+    # 9. Historical Event Comparator
+    comp = compare_historical_climate_events()
+    assert len(comp["historical_comparisons"]) >= 3
+    names = [e["event_name"] for e in comp["historical_comparisons"]]
+    assert any("2015" in n for n in names)
+    assert any("Michaung" in n for n in names)
+    assert any("2019" in n for n in names)
+
+    # 10. Post-Event Learning Assistant
+    learning = audit_post_event_learning()
+    assert len(learning["verified_hindcast_cases"]) >= 2
+    assert len(learning["retraining_recommendations"]) >= 2
+

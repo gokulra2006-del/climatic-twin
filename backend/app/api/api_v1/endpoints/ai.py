@@ -212,3 +212,118 @@ async def ask_nova_copilot(payload: CopilotQuestion):
         "hazard": payload.hazard.upper(),
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+# ============================================================================
+# COMPREHENSIVE AI DECISION INTELLIGENCE SUITE ENDPOINTS
+# ============================================================================
+
+from app.core.ai_suite import (
+    generate_ai_response_plan,
+    generate_ai_situation_report,
+    generate_risk_narrative,
+    simulate_ai_counterfactual,
+    generate_smart_bilingual_alerts,
+    prioritise_operational_actions,
+    audit_data_quality_guardian,
+    compare_historical_climate_events,
+    audit_post_event_learning
+)
+
+class CounterfactualRequest(BaseModel):
+    rainfall_delta_pct: float = Field(0.0, description="Percentage change in rainfall (-100 to +300%)")
+    pump_station_failure: bool = Field(False, description="Simulate Velachery central pump failure")
+    reservoir_capacity_delta_pct: float = Field(0.0, description="Percentage change in available buffer")
+    subway_drainage_blocked: bool = Field(False, description="Simulate silt-blocked subway sluices")
+
+
+class SmartAlertRequest(BaseModel):
+    threat_level: str = Field("WARNING", description="ADVISORY, WARNING, CRITICAL")
+    target_zone: str = Field("Velachery Micro-Basin", description="Designated Chennai Zone / Micro-Basin")
+
+
+@router.get("/response-plan")
+def get_ai_response_plan_endpoint(threat_level: str = "EMERGENCY", hazard: str = "FLOOD"):
+    """
+    Feature 1: AI Response Plan Generator
+    Builds immediate actions, responsible teams, locations, resources, and escalation timeline.
+    """
+    return generate_ai_response_plan(risk_level=threat_level, custom_hazard=hazard)
+
+
+@router.get("/situation-report")
+def get_ai_situation_report_endpoint():
+    """
+    Feature 3: AI Situation Report (SitRep) Generator
+    Produces hourly operational summary with downloadable CSV data rows.
+    """
+    return generate_ai_situation_report()
+
+
+@router.get("/risk-narratives")
+def get_risk_narratives_endpoint(hazard: str = "FLOOD"):
+    """
+    Feature 4: Explainable Risk Narratives
+    Translates SHAP / model features into plain-English driver contributions.
+    """
+    return generate_risk_narrative(hazard=hazard)
+
+
+@router.post("/what-if-counterfactual")
+def run_ai_what_if_counterfactual(payload: CounterfactualRequest):
+    """
+    Feature 5: AI Multi-Hazard What-If Scenario Simulator
+    Evaluates risk deltas for counterfactual rainfall changes, pump outages, and storage shifts.
+    """
+    return simulate_ai_counterfactual(
+        rainfall_delta_pct=payload.rainfall_delta_pct,
+        pump_station_failure=payload.pump_station_failure,
+        reservoir_capacity_delta_pct=payload.reservoir_capacity_delta_pct,
+        subway_drainage_blocked=payload.subway_drainage_blocked
+    )
+
+
+@router.post("/smart-alerts")
+def generate_smart_alerts_endpoint(payload: SmartAlertRequest):
+    """
+    Feature 6: Smart Bilingual Alert Writer
+    Generates Tamil and English alerts with mandatory human-in-the-loop review safeguard.
+    """
+    return generate_smart_bilingual_alerts(threat_level=payload.threat_level, target_zone=payload.target_zone)
+
+
+@router.get("/prioritise-actions")
+def get_prioritised_actions_endpoint():
+    """
+    Feature 7: Multi-Criteria Action Prioritisation Engine
+    Ranks operational interventions by benefit, urgency, population, and confidence.
+    """
+    return prioritise_operational_actions()
+
+
+@router.get("/data-quality-guardian")
+def get_data_quality_guardian_endpoint():
+    """
+    Feature 8: AI Data Quality Guardian
+    Blocks automated advice if reservoir or sensor streams are simulated, stale, or anomalous.
+    """
+    return audit_data_quality_guardian()
+
+
+@router.get("/historical-comparator")
+def get_historical_event_comparator_endpoint():
+    """
+    Feature 9: Historical Event Analog Comparator
+    Compares current state to 2015 Floods, 2019 Drought, and Cyclone Michaung.
+    """
+    return compare_historical_climate_events()
+
+
+@router.get("/post-event-learning")
+def get_post_event_learning_endpoint():
+    """
+    Feature 10: Post-Event Learning & Verification Assistant
+    Audits past warnings, response delays, false alarms, and model retraining advice.
+    """
+    return audit_post_event_learning()
+

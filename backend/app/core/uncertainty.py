@@ -163,6 +163,14 @@ class UncertaintyQuantificationEngine:
         else:
             if uncertainty_level == "HIGH":
                 return {"severity": "LOW", "confidence_tag": "SENSOR DISCREPANCY", "action": "Inspect telemetry sensor health"}
-            return {"severity": "LOW", "confidence_tag": "NOMINAL", "action": "Routine surveillance"}
+    def get_baseline_uncertainty(self) -> Dict[str, Any]:
+        """Returns baseline uncertainty bounds and epistemic variance for default state."""
+        return {
+            "mean_prediction_interval_width": 0.18,
+            "epistemic_variance": 0.015,
+            "confidence_level": self.default_confidence,
+            "uncertainty_level": "LOW",
+            "conformal_threshold": self.conformal_thresholds.get("current", 0.142)
+        }
 
 uncertainty_engine = UncertaintyQuantificationEngine()
