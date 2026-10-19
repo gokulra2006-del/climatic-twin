@@ -26,6 +26,15 @@ class AlertState(BaseModel):
     status: str # ACTIVE, ACKNOWLEDGED, RESOLVED
     previous_score: Optional[float] = None
     created_at: str
+    # Bilingual Tamil + English Fields (WCAG Accessible)
+    title_en: Optional[str] = None
+    title_ta: Optional[str] = None
+    action_recommendation_en: Optional[str] = None
+    action_recommendation_ta: Optional[str] = None
+    location_en: Optional[str] = None
+    location_ta: Optional[str] = None
+    uncertainty_wording_en: Optional[str] = None
+    uncertainty_wording_ta: Optional[str] = None
 
 # Threshold configurations
 SEVERITY_THRESHOLDS = {
@@ -200,7 +209,26 @@ class AlertIntelligenceEngine:
         # Create alert ID or reuse existing
         aid = self.active_alerts[alert_key].alert_id if alert_key in self.active_alerts else str(uuid.uuid4())
         created = self.active_alerts[alert_key].created_at if alert_key in self.active_alerts else now_str
+
+        # Bilingual Tamil + English metadata
+        loc_en = top_asset.get('name', 'Greater Chennai Metropolitan Area') if top_asset else 'Greater Chennai Metropolitan Area'
+        loc_ta = "அடையாறு வடிநிலம் / வேளச்சேரி பகுதி" if "flood" in hazard_type.lower() else "சென்னை பெருநகர பகுதி"
         
+        if "flood" in hazard_type.lower():
+            t_en = f"{severity} Flood Warning: {loc_en}"
+            t_ta = f"{severity} வெள்ள அபாய எச்சரிக்கை: {loc_ta}"
+            act_en = "Avoid low-lying subways. Deploy standby dewatering pumps at micro-basins and clear storm-water inlets."
+            act_ta = "தாழ்வான சுரங்கப்பாதைகளை தவிர்க்கவும். நீர் இறைக்கும் மோட்டார்களை தயார் நிலையில் வைத்து மழைநீர் வடிகால்களை சீரமைக்கவும்."
+            unc_en = f"Forecast Confidence: {confidence}. Calibrated against CMWSSB reservoir storage and conformal interval."
+            unc_ta = f"கணிப்பு நம்பகத்தன்மை: {confidence}. செம்பரம்பாக்கம் ஏரி இருப்பு மற்றும் மழை அளவை அடிப்படையாகக் கொண்டது."
+        else:
+            t_en = f"{severity} {hazard_type} Advisory: {loc_en}"
+            t_ta = f"{severity} {hazard_type} முன்னெச்சரிக்கை: {loc_ta}"
+            act_en = "Monitor municipal agency updates and prepare precautionary resilience measures."
+            act_ta = "மாநகராட்சி அறிவிப்புகளை தொடர்ந்து கண்காணித்து தேவையான முன்னெச்சரிக்கை நடவடிக்கைகளை எடுக்கவும்."
+            unc_en = f"Forecast Confidence: {confidence}."
+            unc_ta = f"கணிப்பு நம்பகத்தன்மை: {confidence}."
+
         new_alert = AlertState(
             alert_id=aid,
             hazard=hazard_type,
@@ -215,7 +243,15 @@ class AlertIntelligenceEngine:
             evidence=evidence,
             status="ACTIVE",
             previous_score=prev_score,
-            created_at=created
+            created_at=created,
+            title_en=t_en,
+            title_ta=t_ta,
+            action_recommendation_en=act_en,
+            action_recommendation_ta=act_ta,
+            location_en=loc_en,
+            location_ta=loc_ta,
+            uncertainty_wording_en=unc_en,
+            uncertainty_wording_ta=unc_ta
         )
         
         # Only keep alerts that are WATCH or above

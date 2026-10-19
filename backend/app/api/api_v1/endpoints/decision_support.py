@@ -15,6 +15,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.core.decision_support import decision_engine
+from app.core.action_tracker import action_tracker
 
 router = APIRouter()
 
@@ -46,6 +47,31 @@ class DecisionAssessRequest(BaseModel):
     source_health_states: Optional[List[str]] = Field(None, description="Health states list across monitored telemetry sources")
     asset_details: Optional[List[Dict[str, Any]]] = Field(None, description="List of granular asset objects for priority evaluation")
 
+
+class ActionUpdateRequest(BaseModel):
+    status: str = Field(..., description="suggested, acknowledged, in_progress, completed, effective, ineffective")
+    reviewer_name: str = Field(..., description="Name and designation of the responding officer")
+    effectiveness_rating: Optional[str] = Field(None, description="HIGHLY_EFFECTIVE, MODERATELY_EFFECTIVE, INEFFECTIVE, PENDING_ASSESSMENT")
+    outcome_evidence: Optional[str] = Field(None, description="Measurable outcome description or sensor verification")
+    verified_source_url: Optional[str] = Field(None, description="Official report/log URL")
+    notes: Optional[str] = Field(None, description="Operational notes")
+
+
+class ActionCreateRequest(BaseModel):
+    action_type: str
+    title_en: str
+    title_ta: Optional[str] = ""
+    target_location: str
+    zone: str
+    latitude: float
+    longitude: float
+    department: str
+    urgency: str = "HIGH"
+    suggested_by: str = "NOVA Decision Intelligence"
+    verified_source_url: Optional[str] = None
+    notes: Optional[str] = None
+
+
 @router.get("/current")
 def get_current_decision_state():
     """
@@ -53,6 +79,8 @@ def get_current_decision_state():
     data quality gate status, escalation posture, and recommended actions.
     """
     return decision_engine.assess()
+
+
 @router.post("/assess")
 def assess_custom_scenario(payload: DecisionAssessRequest):
     """
@@ -62,6 +90,8 @@ def assess_custom_scenario(payload: DecisionAssessRequest):
     """
     params = payload.model_dump()
     return decision_engine.assess(**params)
+
+
 @router.get("/policy")
 def get_decision_policy():
     """
@@ -97,3 +127,71 @@ def get_priority_assets():
         "decision_level": result["decision_level"],
         "decision_score": result["decision_score"]
     }
+
+
+# =========================================================================
+# ACTION EFFECTIVENESS TRACKER ENDPOINTS
+# =========================================================================
+
+@router.get("/actions")
+def list_actions(
+    status: Optional[str] = None,
+    department: Optional[str] = None,
+    action_type: Optional[str] = None
+):
+    """
+    Retrieves operational interventions suggested by NOVA with lifecycle status,
+    response times, agency acknowledgment, and field outcome evidence.
+    """
+    actions = action_tracker.list_actions(status=status, department=department, action_type=action_type)
+    return {
+        "status": "success",
+        "count": len(actions),
+        "actions": actions
+    }
+
+
+@router.get("/actions/summary")
+def get_action_effectiveness_summary():
+    """
+    Returns high-level effectiveness rate, average response latency,
+    and department-level operational dispatch metrics.
+    """
+    return {
+        "status": "success",
+        "summary": action_tracker.get_summary()
+    }
+
+
+@router.post("/actions")
+def create_action(payload: ActionCreateRequest):
+    """
+    Dispatches a new suggested operational action to municipal responders.
+    """
+    record = action_tracker.create_action(payload.model_dump())
+    return {
+        "status": "success",
+        "action": record
+    }
+
+
+@router.post("/actions/{action_id}/update")
+def update_action_lifecycle(action_id: str, payload: ActionUpdateRequest):
+    """
+    Updates the execution status and outcome verification of an intervention
+    (e.g., Acknowledged, Completed, Effective).
+    """
+    try:
+        updated = action_tracker.update_action(
+            action_id=action_id,
+            status=payload.status,
+            reviewer_name=payload.reviewer_name,
+            effectiveness_rating=payload.effectiveness_rating,
+            outcome_evidence=payload.outcome_evidence,
+            verified_source_url=payload.verified_source_url,
+            notes=payload.notes
+        )
+        return {"status": "success", "action": updated}
+    except ValueError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=str(e))

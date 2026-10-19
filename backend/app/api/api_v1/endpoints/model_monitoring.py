@@ -203,20 +203,38 @@ def sync_live_weather_telemetry():
         "rainfall_daily", "rainfall_3d_sum", "rainfall_5d_sum", "rainfall_7d_sum",
         "temp_mean", "temp_max", "temp_min", "dew_point_mean", "wind_speed_mean"
     )
+    weather_dict = {field: flood_telem.get(field, 0.0) for field in weather_fields}
+    
+    # Ingest verified CMWSSB reservoir features
+    from app.core.reservoir_engine import reservoir_engine
+    reservoir_features = reservoir_engine.get_live_feature_vector()
+    
+    # Run deployed Champion Random Forest model live inference with uncertainty interval
+    inference = model_monitoring_engine.predict_live_inference(weather_dict, reservoir_features)
+    
     observation = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "provider_observed_at": observed_at,
-        "source": "Open-Meteo live weather API",
-        "source_mode": "LIVE_WEATHER_API",
-        **{field: flood_telem.get(field) for field in weather_fields},
+        "source": "Open-Meteo live weather API + CMWSSB Lake Bulletin",
+        "source_mode": "LIVE_CALIBRATED_PIPELINE",
+        **weather_dict,
+        **reservoir_features,
+        "predicted_probability": inference["predicted_probability"],
+        "epistemic_variance": inference["epistemic_variance"],
+        "prediction_interval_width": inference["prediction_interval_width"],
+        "prediction_interval_lower": inference["prediction_interval_lower"],
+        "prediction_interval_upper": inference["prediction_interval_upper"],
+        "model_version": inference["model_version"],
+        "input_provenance": inference["input_provenance"]
     }
     model_monitoring_engine.record_live_observation(observation)
 
     return {
-        "status": "LIVE_WEATHER_OBSERVATION_RECORDED",
+        "status": "LIVE_INFERENCE_OBSERVATION_RECORDED",
         "ingested_observations_count": 1,
         "buffer_size": len(model_monitoring_engine.live_buffer),
+        "inference_output": inference,
         "latest_overview": model_monitoring_engine.get_comprehensive_model_health("7d"),
-        "note": "Recorded one provider-observed weather snapshot. Reservoir values and flood-model outputs are intentionally excluded until verified sources are connected."
+        "note": "Observation recorded with live weather telemetry, verified CMWSSB reservoir storage, and calibrated model inference."
     }
 

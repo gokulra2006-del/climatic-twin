@@ -36,6 +36,9 @@ backend/*-server.err.log
 backend/*.out.log
 backend/*.err.log
 backend/data/runtime/
+backend/climatetwin.db
+.published-checkout/
+frontend/.vite/
 frontend/*.out.log
 frontend/*.err.log
 **/run-check.*.log

@@ -7,10 +7,13 @@ ALLOWED_IMPACT_TYPES = {
     "road_closure",
     "flood_extent",
     "reservoir_overflow",
+    "reservoir_release",
     "power_outage",
     "hospital_access_disruption",
     "drainage_failure",
-    "water_deficit_crisis"
+    "water_deficit_crisis",
+    "public_complaint",
+    "public_complaints"
 }
 
 ALLOWED_EVIDENCE_STATUSES = {

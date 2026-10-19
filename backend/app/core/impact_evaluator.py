@@ -147,6 +147,7 @@ def evaluate_warning_impact_alignment(
 
     return {
         "status": "EVALUATED",
+        "validation_mode": "RETROSPECTIVE_DEMONSTRATION",
         "total_impact_records": total_provided,
         "eligible_historical_real_records": total_real_impacts,
         "excluded_synthetic_proxy_records": excluded_count,
@@ -160,9 +161,15 @@ def evaluate_warning_impact_alignment(
         "brier_score": round(brier_score, 4) if brier_score is not None else None,
         "sample_size_n": sample_size_n,
         "sample_size_warning": sample_warning,
+        "publication_integrity_notice": (
+            "RETROSPECTIVE DEMONSTRATION NOTICE: These metric values benchmark hindcast model warnings "
+            "against documented historical events. While source-verified, because hindcasts were reconstructed "
+            "retrospectively, academic manuscripts must report this as an illustrative case-study alignment, "
+            "reserving prospective claims for real-time deployed telemetry."
+        ),
         "evidence_note": (
-            f"Strict empirical evaluation against {total_real_impacts} verified historical real records. "
+            f"Retrospective benchmark against {total_real_impacts} verified historical real records. "
             f"Excluded {excluded_count} synthetic/proxy records. Spatial radius: {radius_km} km, time window: {time_window_hours} hrs."
         ),
-        "provenance": "HISTORICAL REAL ONLY MATCHING (Empirical Benchmark)"
+        "provenance": "RETROSPECTIVE DEMONSTRATION & BENCHMARK — NOT PROSPECTIVE REAL-WORLD CLAIM"
     }
