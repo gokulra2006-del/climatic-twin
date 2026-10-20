@@ -31,6 +31,27 @@ def get_ai_command_summary(hazard: str = "FLOOD"):
     # Pull the live, assimilated physical state of the city
     twin_data = twin_engine.get_current_state()
     env_state = twin_data.get("state", {})
+    live_weather = {}
+    try:
+        from app.core.satellite_ingestion import satellite_engine
+        telemetry = satellite_engine.get_latest_satellite_telemetry()
+        extreme_rain = telemetry.get("extreme_rainfall", {})
+        heatwave = telemetry.get("heatwave", {})
+        telemetry_meta = telemetry.get("telemetry_meta", {})
+        live_weather = {
+            "precipitation_mm": extreme_rain.get("current_precip_mm"),
+            "rain_mm": extreme_rain.get("current_rain_mm"),
+            "showers_mm": extreme_rain.get("current_showers_mm"),
+            "temperature_c": heatwave.get("air_temp_c"),
+            "weather_code": extreme_rain.get("weather_code"),
+            "source": extreme_rain.get("source"),
+            "observed_at": extreme_rain.get("observed_at") or telemetry_meta.get("observed_at"),
+            "mode": telemetry_meta.get("mode", "UNAVAILABLE"),
+            "coverage_note": "City-scale provider observation near central Chennai; it may differ from conditions at your exact location."
+        }
+        forecast_weather = telemetry.get("forecast_weather", {})
+    except Exception as exc:
+        logger.warning("NOVA could not load live weather context: %s", exc)
     
     # Obtain precise live flood probability from the ML model
     features = twin_engine.get_feature_vector()
@@ -187,6 +208,8 @@ def get_ai_command_summary(hazard: str = "FLOOD"):
             "asset_priority": "Prototype screening result — requires field verification",
             "ai_mode": nova_copilot.provider_status()["provider"],
         },
+        "live_weather": live_weather,
+        "forecast_weather": forecast_weather if "forecast_weather" in locals() else {},
         "recommended_checks": [
             "Refresh telemetry before escalating an operational action.",
             "Verify any reported impact with an authorised field or agency source.",

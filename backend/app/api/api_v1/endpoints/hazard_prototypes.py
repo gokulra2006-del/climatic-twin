@@ -339,10 +339,20 @@ def get_latest_wildfire() -> dict:
 
 # --- EXTREME RAINFALL ---
 def _calc_extreme_rain_prob(cape, rain):
+    """Transparent short-horizon convective review proxy.
+
+    Open-Meteo's current precipitation is an hourly amount.  The former
+    50 mm-only threshold hid light and moderate observed rainfall completely.
+    This remains a review proxy, not an official nowcast or public warning.
+    """
     prob = 0.0
-    if cape > 1500.0: prob += 0.3
-    if cape > 2500.0: prob += 0.4
-    if rain > 50.0: prob += 0.3
+    if rain > 0.0: prob += 0.08
+    if rain >= 1.0: prob += 0.12
+    if rain >= 5.0: prob += 0.20
+    if rain >= 10.0: prob += 0.25
+    if cape >= 1000.0: prob += 0.10
+    if cape >= 1800.0: prob += 0.15
+    if cape >= 2500.0: prob += 0.15
     return min(1.0, max(0.0, prob))
 
 def get_latest_extreme_rainfall() -> dict:
@@ -369,10 +379,11 @@ def get_latest_extreme_rainfall() -> dict:
             "risk_level": map_risk_level_generic(prob),
             "lead_time_hours": 6,
             "lead_time_text": "Live Convective Monitoring",
-            "thresholds_disclaimer": "Live Convective Potential (CAPE) Analysis",
+            "thresholds_disclaimer": "Weather-provider precipitation and CAPE review proxy; not an IMD Doppler nowcast or public warning.",
             "contributing_features": {
                 "Convective Energy (CAPE)": cape,
-                "Current Precip (mm)": rain
+                "Current Precipitation (mm, provider hour)": rain,
+                "Weather Code": er_live.get("weather_code")
             },
             "timestamp": datetime.now(timezone.utc),
             "data_source": er_live.get("source", "Live Open-Meteo"),

@@ -36,8 +36,9 @@ export default function ExtremeRainfallDashboard({
   const prob = latestPred?.probability ?? 0.10;
   const features = latestPred?.contributing_features || {};
 
-  const cape = features["Convective Energy (CAPE)"] ?? 450.0;
-  const rainMm = features["Current Precip (mm)"] ?? 0.0;
+  const cape = features["Convective Energy (CAPE)"];
+  const rainMm = features["Current Precipitation (mm, provider hour)"] ?? features["Current Precip (mm)"];
+  const hasRainReading = typeof rainMm === 'number';
 
   const getRiskBadgeColor = (level) => {
     switch (level) {
@@ -111,36 +112,36 @@ export default function ExtremeRainfallDashboard({
             <CloudLightning className="h-4 w-4 text-purple-600" />
           </div>
           <p className="text-3xl font-black text-slate-900 tracking-tight">
-            {cape} <span className="text-xs font-medium text-slate-500">J/kg</span>
+            {cape ?? '—'} <span className="text-xs font-medium text-slate-500">J/kg</span>
           </p>
           <div className="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
             <div 
               className="h-full bg-purple-600 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(100, (cape / 2500.0) * 100)}%` }}
+              style={{ width: `${cape == null ? 0 : Math.min(100, (cape / 2500.0) * 100)}%` }}
             ></div>
           </div>
           <p className="text-[11px] text-slate-500 font-medium mt-2">
-            Threshold: <strong className="text-slate-800">{cape > 1500 ? 'Severe Thunderstorm Potential' : 'Stable Troposphere'}</strong>
+            Threshold: <strong className="text-slate-800">{cape == null ? 'Provider value unavailable' : cape > 1500 ? 'Severe thunderstorm potential' : 'Limited convective support'}</strong>
           </p>
         </div>
 
         {/* Current Precipitation Intensity */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex justify-between items-start mb-3">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Current Rainfall Rate</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Provider precipitation</p>
             <Droplets className="h-4 w-4 text-blue-500" />
           </div>
           <p className="text-3xl font-black text-slate-900 tracking-tight">
-            {rainMm} <span className="text-xs font-medium text-slate-500">mm/hr</span>
+            {hasRainReading ? rainMm.toFixed(1) : '—'} <span className="text-xs font-medium text-slate-500">mm / current provider hour</span>
           </p>
           <div className="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
             <div 
               className="h-full bg-blue-500 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(100, Math.max(5, (rainMm / 50.0) * 100))}%` }}
+              style={{ width: `${hasRainReading ? Math.min(100, Math.max(5, (rainMm / 25.0) * 100)) : 0}%` }}
             ></div>
           </div>
           <p className="text-[11px] text-slate-500 font-medium mt-2">
-            Status: <strong className="text-slate-800">{rainMm > 20 ? 'Heavy Inundating Rain' : 'Light / Trace Precipitation'}</strong>
+            Status: <strong className="text-slate-800">{!hasRainReading ? 'Provider value unavailable' : rainMm >= 10 ? 'Heavy rain observed' : rainMm > 0 ? 'Rain observed — review local conditions' : 'No rain at provider location'}</strong>
           </p>
         </div>
 

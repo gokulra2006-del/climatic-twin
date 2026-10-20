@@ -17,6 +17,40 @@ LON = 80.2707
 # Bounding box for Chennai region (Min Lon, Min Lat, Max Lon, Max Lat)
 CHENNAI_BBOX = "79.8,12.8,80.4,13.3"
 
+# WMO Weather Code Descriptions
+WMO_WEATHER_CODES = {
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Fog",
+    48: "Depositing rime fog",
+    51: "Light drizzle",
+    53: "Moderate drizzle",
+    55: "Dense drizzle",
+    56: "Light freezing drizzle",
+    57: "Dense freezing drizzle",
+    61: "Slight rain",
+    62: "Moderate rain",
+    63: "Heavy rain",
+    65: "Heavy rain",
+    66: "Light freezing rain",
+    67: "Heavy freezing rain",
+    71: "Slight snow fall",
+    73: "Moderate snow fall",
+    75: "Heavy snow fall",
+    77: "Snow grains",
+    80: "Slight rain showers",
+    81: "Moderate rain showers",
+    82: "Violent rain showers",
+    85: "Slight snow showers",
+    86: "Heavy snow showers",
+    95: "Thunderstorm",
+    96: "Thunderstorm with slight hail",
+    99: "Thunderstorm with heavy hail",
+}
+
+
 # Chennai Multi-Station Spatial Sensor Network Coordinates
 CHENNAI_SENSOR_STATIONS = {
     "CHENNAI_CENTRAL": {"name": "Chennai Central Met Station", "lat": 13.0827, "lon": 80.2707, "zone": "Central"},
@@ -152,7 +186,7 @@ class LiveTelemetryEngine:
                 }
 
             # 1. Main Weather (Open-Meteo Fallback)
-            weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,dew_point_2m&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation,rain,wind_speed_10m,soil_temperature_0cm,soil_moisture_0_to_7cm,soil_moisture_28_to_100cm,cape,uv_index,direct_radiation,vapor_pressure_deficit&timezone=Asia%2FKolkata&past_hours=168"
+            weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,dew_point_2m&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation,rain,wind_speed_10m,soil_temperature_0cm,soil_moisture_0_to_7cm,soil_moisture_28_to_100cm,cape,uv_index,direct_radiation,vapor_pressure_deficit,precipitation_probability,weather_code&timezone=Asia%2FKolkata&past_hours=168"
             weather_res = requests.get(weather_url, timeout=10).json()
             
             current = weather_res.get('current', {})
@@ -316,6 +350,10 @@ class LiveTelemetryEngine:
             ext_rain_data = {
                 "cape_j_kg": cape,
                 "current_precip_mm": rain,
+                "current_rain_mm": current.get("rain"),
+                "current_showers_mm": current.get("showers"),
+                "weather_code": current.get("weather_code"),
+                "observed_at": observed_at,
                 "source": "Open-Meteo live weather-derived fields",
                 "status": "LIVE_FETCHED"
             }
@@ -415,7 +453,69 @@ class LiveTelemetryEngine:
                     "source_mode": "DERIVED_SPATIAL_ESTIMATE"
                 }
 
+            
+            # Phase 20: Extract upcoming forecast windows (next 1h, 3h, 6h, 24h)
+            forecast_weather_data = {}
+            try:
+                curr_idx = -1
+                for i, t in enumerate(hourly_times):
+                    if observed_at and t >= observed_at[:13]:
+                        curr_idx = i
+                        break
+                if curr_idx != -1 and curr_idx + 1 < len(hourly_times):
+                    idx1 = curr_idx + 1
+                    h_prob = hourly.get("precipitation_probability", [])
+                    h_precip = hourly.get("precipitation", [])
+                    h_code = hourly.get("weather_code", [])
+
+                    def _safe_slice(arr, start, count):
+                        return [x for x in arr[start:start+count] if x is not None]
+
+                    p1, p3, p6, p24 = [_safe_slice(h_prob, idx1, n) for n in (1, 3, 6, 24)]
+                    r1, r3, r6, r24 = [_safe_slice(h_precip, idx1, n) for n in (1, 3, 6, 24)]
+                    c1, c3, c6, c24 = [_safe_slice(h_code, idx1, n) for n in (1, 3, 6, 24)]
+
+                    forecast_weather_data = {
+                        "status": "AVAILABLE",
+                        "mode": "LIVE_WEATHER_API",
+                        "source": "Open-Meteo hourly forecast",
+                        "forecast_generated_at": datetime.now(timezone.utc).isoformat(),
+                        "forecast_start_time": hourly_times[idx1],
+                        "windows": {
+                            "1h": {
+                                "period": "next 1 hour",
+                                "precipitation_probability_pct": max(p1) if p1 else 0,
+                                "expected_rainfall_mm": round(sum(r1), 2) if r1 else 0.0,
+                                "weather_code": c1[0] if c1 else None,
+                                "condition": WMO_WEATHER_CODES.get(c1[0], f"Code {c1[0]}") if c1 else "Unknown",
+                            },
+                            "3h": {
+                                "period": "next 3 hours",
+                                "precipitation_probability_pct": max(p3) if p3 else 0,
+                                "expected_rainfall_mm": round(sum(r3), 2) if r3 else 0.0,
+                                "weather_code": c3[0] if c3 else None,
+                                "condition": WMO_WEATHER_CODES.get(c3[0], f"Code {c3[0]}") if c3 else "Unknown",
+                            },
+                            "6h": {
+                                "period": "next 6 hours",
+                                "precipitation_probability_pct": max(p6) if p6 else 0,
+                                "expected_rainfall_mm": round(sum(r6), 2) if r6 else 0.0,
+                                "weather_code": c6[0] if c6 else None,
+                                "condition": WMO_WEATHER_CODES.get(c6[0], f"Code {c6[0]}") if c6 else "Unknown",
+                            },
+                            "24h": {
+                                "period": "next 24 hours",
+                                "precipitation_probability_pct": max(p24) if p24 else 0,
+                                "expected_rainfall_mm": round(sum(r24), 2) if r24 else 0.0,
+                            }
+                        },
+                        "city_scale_note": "City-scale weather forecast for central Chennai grid (lat 13.08, lon 80.27); micro-climatic distribution may vary by neighborhood or ward."
+                    }
+            except Exception as e:
+                logger.warning(f"Failed to extract forecast windows: {e}")
+
             return {
+                "forecast_weather": forecast_weather_data,
                 "heatwave": heatwave_data,
                 "drought": drought_data,
                 "wildfire": wildfire_data,

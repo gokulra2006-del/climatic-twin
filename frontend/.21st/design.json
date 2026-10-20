@@ -49,7 +49,14 @@
     "must": [],
     "avoid": []
   },
-  "decisions": [],
+  "decisions": [
+    {
+      "area": "NOVA operational workspace",
+      "choice": "Use a light, compact command bar with a responsive grid of decision tools instead of a decorative banner or horizontally clipped tab strip.",
+      "reason": "Operators need all tools visible at once and a clear active state on desktop and smaller screens.",
+      "date": "2026-10-20"
+    }
+  ],
   "evidence": [
     {
       "fact": "design.colorMode:light",
